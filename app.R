@@ -13,8 +13,8 @@ library(shiny)
 #library(shinythemes)
 library(pdftools)
 library(magick)
-library(officer)  # Required for conversions
-library(openxlsx) # Required for conversions
+#library(officer)  # Required for conversions
+#library(openxlsx) # Required for conversions
 
 options(shiny.maxRequestSize = 200 * 1024^2)  # 200 MB
 
@@ -381,14 +381,35 @@ server <- function(input, output, session) {
       
       # Perform conversion based on selected format
       if (format == "Word (.docx)") {
+        if (!requireNamespace("officer", quietly = TRUE)) {
+          showNotification(
+            "The 'officer' package is not installed. Please install it to use this feature.",
+            type = "error"
+          )
+        } else {
         converted_file <- file.path(output_dir, "converted.docx")
         convert_to_word(pdf_path, converted_file)
+        }
       } else if (format == "Excel (.xlsx)") {
+        if (!requireNamespace("openxlsx", quietly = TRUE)) {
+          showNotification(
+            "The 'openxlsx' package is not installed. Please install it to use this feature.",
+            type = "error"
+          )
+        } else {
         converted_file <- file.path(output_dir, "converted.xlsx")
         convert_to_excel(pdf_path, converted_file)
+        }
       } else if (format == "PowerPoint (.pptx)") {
+        if (!requireNamespace("officer", quietly = TRUE)) {
+          showNotification(
+            "The 'officer' package is not installed. Please install it to use this feature.",
+            type = "error"
+          )
+        } else {
         converted_file <- file.path(output_dir, "converted.pptx")
         convert_to_powerpoint(pdf_path, converted_file)
+        }
       } else if (format == "Images (.png as a zip file)") {
         converted_file <- convert_to_images(pdf_path, output_dir)
       }
