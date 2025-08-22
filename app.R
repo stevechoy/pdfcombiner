@@ -395,6 +395,7 @@ server <- function(input, output, session) {
         } else {
         converted_file <- file.path(output_dir, "converted.xlsx")
         convert_to_excel(pdf_path, converted_file)
+        showNotification(paste("PDF converted to", format, "successfully!"), type = "message")
         }
       } else if (format == "PowerPoint (.pptx)") {
         if (!requireNamespace("officer", quietly = TRUE)) {
@@ -405,9 +406,11 @@ server <- function(input, output, session) {
         } else {
         converted_file <- file.path(output_dir, "converted.pptx")
         convert_to_powerpoint(pdf_path, converted_file)
+        showNotification(paste("PDF converted to", format, "successfully!"), type = "message")
         }
       } else if (format == "Images (.png as a zip file)") {
         converted_file <- convert_to_images(pdf_path, output_dir)
+        showNotification(paste("PDF converted to", format, "successfully!"), type = "message")
       }
       
       # Increment progress
@@ -429,9 +432,6 @@ server <- function(input, output, session) {
         }
       )
     })
-    
-    # Show notification when conversion is complete
-    showNotification(paste("PDF converted to", format, "successfully!"), type = "message")
   })
   
 } # end of server
