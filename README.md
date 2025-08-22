@@ -1,11 +1,12 @@
 # PDF Combiner
 
-R Shiny App to allow merging of pdf files with page removal option.  
+PDF Combiner is a simple <a href="https://lagom.shinyapps.io/PDF_Combiner/" target="_blank">R Shiny App</a> that allows merging of pdf files with page removal option.  
+It is a **free alternative** to Adobe Acrobat and/or various online websites which require users to sign-up.  
 
 Features include:  
 - Supports multiple upload of PDFs, either one at a time or all at once  
 - Select PDFs to be combined and change the order of files  
-- Remove pages by either using commas (1,2,3), or hyphens (5-10), or a combination of both (1,2,3,5-10)  
+- Remove pages by either using commas (1,2,3), hyphens (5-10), or a combination of both (1,2,3,5-10)  
 - Built-in PDF viewer / editor to verify changes  
 - Experimental feature of PDF conversion into Word, Excel, PowerPoint, or .png images  
 
@@ -25,7 +26,7 @@ install.packages(openxlsx) # Optional, required for PDF conversion
 
 Simply save the app.R file locally and run the App in R.  
 
-Alternatively, you may run the App directly *without* installation (assuming you have the required packages):
+Alternatively, you may run the App *directly* from R (assuming you have the required packages listed above):
 
 ``` r
 shiny::runGitHub("PDF_Combiner", username = "stevechoy", launch.browser = TRUE)
