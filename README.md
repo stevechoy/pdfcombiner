@@ -37,4 +37,5 @@ Instructions are included on the left hand side of the page.
 
 ## Notes
 
-All PDF files are stored locally in a per-session temporary directory, given by the `tempdir()` function.  
+- All PDF files are stored locally in a per-session temporary directory, given by the `tempdir()` function.  
+- Each original PDF file name must be different from each other.  
