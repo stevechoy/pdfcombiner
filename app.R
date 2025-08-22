@@ -1,10 +1,6 @@
 #-------------------------------------------------------------------------------
 #' PDF Combiner
 #' 
-#' 2025-08-21 v1.0 - Initial version
-#'            v1.1 - Fixed crash when all pages are removed, dynamic Viewer height
-#'            v1.2 - PDF conversion functionality, word conversion is quite janky
-#' 
 #-------------------------------------------------------------------------------
 
 author_info      <- "Author: Steve Choy (v1.2)"
@@ -105,6 +101,31 @@ convert_to_images <- function(pdf_path, output_dir, dpi = 300) {
   } else {
     stop("No pages were successfully converted to images.")
   }
+}
+
+# Parse Page Numbers to Remove
+parse_pages_to_remove <- function(input_string) {
+  # Split by commas
+  parts <- unlist(strsplit(input_string, ","))
+  pages <- c()
+  
+  for (part in parts) {
+    if (grepl("-", part)) {
+      # Handle ranges (e.g., "5-10")
+      range <- as.numeric(unlist(strsplit(part, "-")))
+      if (length(range) == 2 && !any(is.na(range))) {
+        pages <- c(pages, seq(range[1], range[2]))
+      }
+    } else {
+      # Handle single page numbers
+      page <- as.numeric(part)
+      if (!is.na(page)) {
+        pages <- c(pages, page)
+      }
+    }
+  }
+  
+  return(unique(pages))  # Return unique page numbers
 }
 
 ################################################################################
@@ -211,7 +232,7 @@ server <- function(input, output, session) {
     updateSelectInput(session, "selected_pdfs", choices = names(current_pdfs), selected = names(current_pdfs))
     
     # Automatically combine all uploaded PDFs
-    combined_path <- file.path(temp_dir, paste0("combined_", Sys.time(), ".pdf"))
+    combined_path <- file.path(temp_dir, paste0("combined_", format(Sys.time(), "%Y%m%d%H%M%S"), ".pdf"))
     pdf_combine(unlist(current_pdfs), output = combined_path)
     combined_pdf(combined_path)
     original_pdf(combined_path)  # Save the original combined PDF
@@ -229,7 +250,7 @@ server <- function(input, output, session) {
     selected_paths <- uploaded_pdfs()[selected_names]
     
     # Combine the selected PDFs
-    combined_path <- file.path(temp_dir, paste0("combined_", Sys.time(), ".pdf"))
+    combined_path <- file.path(temp_dir, paste0("combined_", format(Sys.time(), "%Y%m%d%H%M%S"), ".pdf"))
     pdf_combine(selected_paths, output = combined_path)
     combined_pdf(combined_path)
     
@@ -275,31 +296,6 @@ server <- function(input, output, session) {
     )
   })
   
-  # Parse Page Numbers to Remove
-  parse_pages_to_remove <- function(input_string) {
-    # Split by commas
-    parts <- unlist(strsplit(input_string, ","))
-    pages <- c()
-    
-    for (part in parts) {
-      if (grepl("-", part)) {
-        # Handle ranges (e.g., "5-10")
-        range <- as.numeric(unlist(strsplit(part, "-")))
-        if (length(range) == 2 && !any(is.na(range))) {
-          pages <- c(pages, seq(range[1], range[2]))
-        }
-      } else {
-        # Handle single page numbers
-        page <- as.numeric(part)
-        if (!is.na(page)) {
-          pages <- c(pages, page)
-        }
-      }
-    }
-    
-    return(unique(pages))  # Return unique page numbers
-  }
-  
   # Remove Pages
   observeEvent(input$remove_pages_btn, {
     shiny::req(combined_pdf())
@@ -331,7 +327,7 @@ server <- function(input, output, session) {
     }
     
     # Create a new PDF with the remaining pages
-    updated_pdf_path <- file.path(temp_dir, paste0("updated_", Sys.time(), ".pdf"))
+    updated_pdf_path <- file.path(temp_dir, paste0("updated_", format(Sys.time(), "%Y%m%d%H%M%S"), ".pdf"))
     pdf_subset(pdf_path, pages = pages_to_keep, output = updated_pdf_path)
     combined_pdf(updated_pdf_path)  # Update the combined PDF
     
