@@ -194,7 +194,7 @@ ui <- fluidPage(
       
       # Author text at the bottom left
       br(),
-      tags$p(author_info, style = "font-size: 0.9em; color: #555; text-align: left;")
+      tags$p(author_info, a(href = "https://github.com/stevechoy/PDF_Combiner", "(GitHub Repo)", target = "_blank"), style = "font-size: 0.9em; color: #555; text-align: left;")
     ),
     mainPanel(
       width = 7,
