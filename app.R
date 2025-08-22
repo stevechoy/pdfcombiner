@@ -6,13 +6,18 @@
 author_info      <- "Author: Steve Choy (v1.2)"
 
 library(shiny)
-#library(shinythemes)
 library(pdftools)
 library(magick)
-#library(officer)  # Required for conversions
-#library(openxlsx) # Required for conversions
 
-options(shiny.maxRequestSize = 200 * 1024^2)  # 200 MB
+options(shiny.maxRequestSize = 200 * 1024^2)  # 200 MB max size, change if needed
+
+# Check if shinythemes is installed, optional
+if (requireNamespace("shinythemes", quietly = TRUE)) {
+  library(shinythemes)
+  app_theme <- shinytheme("flatly")
+} else {
+  app_theme <- NULL  # Default to no theme if shinythemes is not installed
+}
 
 ################################################################################
 
@@ -132,10 +137,9 @@ parse_pages_to_remove <- function(input_string) {
 
 # UI
 ui <- fluidPage(
-  #theme = shinytheme("flatly"),
-  
+  theme = app_theme,
   tags$head(tags$title("PDF Combiner")),
-  
+
   sidebarLayout(
     sidebarPanel(
       width = 5,
