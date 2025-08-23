@@ -1,15 +1,14 @@
-#-------------------------------------------------------------------------------
-#' PDF Combiner
-#' 
-#-------------------------------------------------------------------------------
+### PDF Combiner - Options #####################################################
 
-author_info      <- "Author: Steve Choy (v1.2)"
+max_file_size    <- 300 # max file size in MB, change if needed
+
+### Setup ######################################################################
 
 library(shiny)
 library(pdftools)
 library(magick)
 
-options(shiny.maxRequestSize = 200 * 1024^2)  # 200 MB max size, change if needed
+options(shiny.maxRequestSize = max_file_size * 1024^2)
 
 # Check if shinythemes is installed, optional
 if (requireNamespace("shinythemes", quietly = TRUE)) {
@@ -19,7 +18,19 @@ if (requireNamespace("shinythemes", quietly = TRUE)) {
   app_theme <- NULL  # Default to no theme if shinythemes is not installed
 }
 
-################################################################################
+### Functions ##################################################################
+
+package_check <- function(pkg_name) {
+  if (!requireNamespace(pkg_name, quietly = TRUE)) {
+    showNotification(
+      paste0("The '", pkg_name, "' package is not installed. Please install it to use this feature."),
+      type = "error"
+    )
+    return(FALSE)
+  } else {
+    return(TRUE)
+  }
+}
 
 convert_to_word <- function(pdf_path, output_path) {
   # Extract text from the PDF
@@ -108,38 +119,26 @@ convert_to_images <- function(pdf_path, output_dir, dpi = 300) {
   }
 }
 
-# Parse Page Numbers to Remove
 parse_pages_to_remove <- function(input_string) {
-  # Split by commas
-  parts <- unlist(strsplit(input_string, ","))
-  pages <- c()
-  
-  for (part in parts) {
-    if (grepl("-", part)) {
-      # Handle ranges (e.g., "5-10")
+  parts <- unlist(strsplit(input_string, ",")) # Split by commas
+  pages <- unlist(lapply(parts, function(part) {
+    if (grepl("-", part)) { # Handle ranges (e.g., "5-10")
       range <- as.numeric(unlist(strsplit(part, "-")))
-      if (length(range) == 2 && !any(is.na(range))) {
-        pages <- c(pages, seq(range[1], range[2]))
-      }
-    } else {
-      # Handle single page numbers
-      page <- as.numeric(part)
-      if (!is.na(page)) {
-        pages <- c(pages, page)
-      }
+      if (length(range) == 2 && !any(is.na(range))) seq(range[1], range[2])
+    } else { # Handle single page numbers
+      as.numeric(part)
     }
-  }
-  
-  return(unique(pages))  # Return unique page numbers
+  }))
+  unique(pages[!is.na(pages)])
 }
 
-################################################################################
+### Shiny App ##################################################################
 
 # UI
 ui <- fluidPage(
   theme = app_theme,
   tags$head(tags$title("PDF Combiner")),
-
+  
   sidebarLayout(
     sidebarPanel(
       width = 5,
@@ -154,8 +153,8 @@ ui <- fluidPage(
         tags$p("4. Verify changes on the right and download the updated PDF.")
       ),
       br(),
-      #h4("Upload & Manage PDFs"),
-      fileInput("pdf_files", "Upload PDF File(s): [Max 200 MB]", multiple = TRUE, accept = ".pdf"),  # Allow multiple file uploads
+      
+      fileInput("pdf_files", paste0("Upload PDF File(s): [Max ", max_file_size, " MB]"), multiple = TRUE, accept = ".pdf"),  # Allow multiple file uploads
       
       # Selector for choosing PDFs to combine
       selectInput("selected_pdfs", "Select PDFs to Combine (in order):", choices = NULL, multiple = TRUE),
@@ -163,8 +162,7 @@ ui <- fluidPage(
       # Combine PDF button directly below the selector
       actionButton("combine_btn", "Update / Combine PDF", style = "margin-top: 0px;"),
       
-      # Grey divider line
-      tags$hr(style = "border: 2px solid #ccc;"),
+      tags$hr(style = "border: 2px solid #ccc;"), # Grey divider line
       
       # Page removal input
       textInput("remove_pages", "Enter (Current) Page Numbers to Remove:", value = ""),
@@ -173,14 +171,13 @@ ui <- fluidPage(
       div(
         style = "display: flex; align-items: center; gap: 20px;",
         actionButton("remove_pages_btn", 
-                     label = tagList(icon("xmark", class = "fa-lg"), "Remove Pages")),  # Remove Pages button with red cross icon
+                     label = tagList(icon("xmark", class = "fa-lg"), "Remove Pages")),  # Remove Pages button with xmark icon
         actionButton("reset_btn", 
-                     label = tagList(icon("sync-alt", class = "fa-lg"), "Reset")),  # Reset button with spinning refresh icon
+                     label = tagList(icon("sync-alt", class = "fa-lg"), "Reset")),  # Reset button with refresh icon
         uiOutput("download_ui")
       ),
- 
-      # Grey divider line
-      tags$hr(style = "border: 2px solid #ccc;"),
+      
+      tags$hr(style = "border: 2px solid #ccc;"), # Grey divider line
       
       # Dropdown for selecting output format
       selectInput(
@@ -191,22 +188,23 @@ ui <- fluidPage(
       ),
       
       div(
-        style = "display: flex; align-items: center; gap: 20px;",  # Flexbox layout with 20px gap
+        style = "display: flex; align-items: center; gap: 20px;", # Flexbox layout with 20px gap
         actionButton("convert_btn", "Convert PDF"),               # Conversion button
         uiOutput("download_conversion_ui")                        # UI for downloading converted file
       ),
       
-      # Author text at the bottom left
       br(),
-      tags$p(author_info, a(href = "https://github.com/stevechoy/PDF_Combiner", "(GitHub Repo)", target = "_blank"), style = "font-size: 0.9em; color: #555; text-align: left;")
-    ),
+      tags$p("Author: Steve Choy (v1.3)",
+             a(href = "https://github.com/stevechoy/PDF_Combiner", "(GitHub Repo)", target = "_blank"),
+             style = "font-size: 0.9em; color: #555; text-align: left;")
+    ), # end of sidebarPanel
+    
     mainPanel(
       width = 7,
-      #h4("PDF Viewer"),
       htmlOutput("pdfviewer")  # Embedded PDF viewer
     )
-  )
-)
+  ) # end of sidebarLayout
+) # end of ui
 
 # Server
 server <- function(input, output, session) {
@@ -217,29 +215,30 @@ server <- function(input, output, session) {
   temp_dir <- tempdir()                 # Temporary directory for storing combined PDFs
   shiny::addResourcePath("pdfs", temp_dir)  # Serve files from the temp directory
   
+  # Helper function to combine PDFs
+  combine_pdfs <- function(pdf_paths, output_path) {
+    pdf_combine(unlist(pdf_paths), output = output_path)
+    combined_pdf(output_path)
+    original_pdf(output_path) # Save the original combined PDF
+    print(paste("Combined PDF Path:", output_path)) # Debugging: Print combined PDF path
+  }
+  
   # Observe file upload
   observeEvent(input$pdf_files, {
     shiny::req(input$pdf_files)
     
-    # Get the uploaded file paths and original names
-    pdf_paths <- input$pdf_files$datapath
-    pdf_names <- input$pdf_files$name
-    
     # Add the new PDFs to the list of uploaded PDFs
     current_pdfs <- uploaded_pdfs()
-    for (i in seq_along(pdf_names)) {
-      current_pdfs[[pdf_names[i]]] <- pdf_paths[i]
+    for (i in seq_along(input$pdf_files$name)) {
+      current_pdfs[[input$pdf_files$name[i]]] <- input$pdf_files$datapath[i]
     }
-    uploaded_pdfs(current_pdfs)
+    uploaded_pdfs(current_pdfs) # List of uploaded pdfs
     
     # Update the selector choices
     updateSelectInput(session, "selected_pdfs", choices = names(current_pdfs), selected = names(current_pdfs))
     
     # Automatically combine all uploaded PDFs
-    combined_path <- file.path(temp_dir, paste0("combined_", format(Sys.time(), "%Y%m%d%H%M%S"), ".pdf"))
-    pdf_combine(unlist(current_pdfs), output = combined_path)
-    combined_pdf(combined_path)
-    original_pdf(combined_path)  # Save the original combined PDF
+    combine_pdfs(current_pdfs, file.path(temp_dir, paste0("combined_", format(Sys.time(), "%Y%m%d%H%M%S"), ".pdf")))
     
     # Debugging: Print uploaded PDFs
     print(paste("Uploaded PDFs:", paste(names(current_pdfs), collapse = ", ")))
@@ -250,19 +249,10 @@ server <- function(input, output, session) {
     shiny::req(input$selected_pdfs)
     
     # Get the selected PDFs
-    selected_names <- input$selected_pdfs
-    selected_paths <- uploaded_pdfs()[selected_names]
+    selected_paths <- uploaded_pdfs()[input$selected_pdfs]
     
     # Combine the selected PDFs
-    combined_path <- file.path(temp_dir, paste0("combined_", format(Sys.time(), "%Y%m%d%H%M%S"), ".pdf"))
-    pdf_combine(selected_paths, output = combined_path)
-    combined_pdf(combined_path)
-    
-    # Update the original PDF to reflect the current combined state
-    original_pdf(combined_path)
-    
-    # Debugging: Print combined PDF path
-    print(paste("Combined PDF Path:", combined_path))
+    combine_pdfs(selected_paths, file.path(temp_dir, paste0("combined_", format(Sys.time(), "%Y%m%d%H%M%S"), ".pdf")))
     
     showNotification("Selected PDFs combined successfully!", type = "message")
   })
@@ -302,8 +292,7 @@ server <- function(input, output, session) {
   
   # Remove Pages
   observeEvent(input$remove_pages_btn, {
-    shiny::req(combined_pdf())
-    shiny::req(input$remove_pages)
+    shiny::req(combined_pdf(), input$remove_pages)
     
     # Parse the page numbers to remove
     pages_to_remove <- parse_pages_to_remove(input$remove_pages)
@@ -337,7 +326,6 @@ server <- function(input, output, session) {
     
     # Debugging: Print updated PDF path
     print(paste("Updated PDF Path:", updated_pdf_path))
-    
     showNotification("Pages removed successfully!", type = "message")
   })
   
@@ -355,78 +343,48 @@ server <- function(input, output, session) {
     downloadButton("download", "Download Updated PDF")
   })
   
-  # Download Handler
   output$download <- downloadHandler(
-    filename = function() {
-      paste0("updated_pdf_", Sys.Date(), ".pdf")
-    },
-    content = function(file) {
-      file.copy(combined_pdf(), file)
-    }
+    filename = function() paste0("updated_pdf_", Sys.Date(), ".pdf"),
+    content = function(file) file.copy(combined_pdf(), file)
   )
   
   observeEvent(input$convert_btn, {
     shiny::req(combined_pdf())
-    
-    # Get the selected format
     format <- input$convert_format
-    pdf_path <- combined_pdf()
-    output_dir <- temp_dir
     converted_file <- NULL
     
     # Progress bar for conversion
     withProgress(message = paste("Converting PDF to", format, "..."), value = 0, {
-      # Increment progress
       incProgress(0.2, detail = "Preparing conversion...")
       
       # Perform conversion based on selected format
-      if (format == "Word (.docx)") {
-        if (!requireNamespace("officer", quietly = TRUE)) {
-          showNotification(
-            "The 'officer' package is not installed. Please install it to use this feature.",
-            type = "error"
-          )
-        } else {
-        converted_file <- file.path(output_dir, "converted.docx")
-        convert_to_word(pdf_path, converted_file)
-        }
-      } else if (format == "Excel (.xlsx)") {
-        if (!requireNamespace("openxlsx", quietly = TRUE)) {
-          showNotification(
-            "The 'openxlsx' package is not installed. Please install it to use this feature.",
-            type = "error"
-          )
-        } else {
-        converted_file <- file.path(output_dir, "converted.xlsx")
-        convert_to_excel(pdf_path, converted_file)
+      if (format == "Word (.docx)" && package_check("officer")) {
+        converted_file <- file.path(temp_dir, "converted.docx")
+        convert_to_word(combined_pdf(), converted_file)
         showNotification(paste("PDF converted to", format, "successfully!"), type = "message")
-        }
-      } else if (format == "PowerPoint (.pptx)") {
-        if (!requireNamespace("officer", quietly = TRUE)) {
-          showNotification(
-            "The 'officer' package is not installed. Please install it to use this feature.",
-            type = "error"
-          )
-        } else {
-        converted_file <- file.path(output_dir, "converted.pptx")
-        convert_to_powerpoint(pdf_path, converted_file)
+        
+      } else if (format == "Excel (.xlsx)" && package_check("openxlsx")) {
+        converted_file <- file.path(temp_dir, "converted.xlsx")
+        convert_to_excel(combined_pdf(), converted_file)
         showNotification(paste("PDF converted to", format, "successfully!"), type = "message")
-        }
+        
+      } else if (format == "PowerPoint (.pptx)" && package_check("officer")) {
+        converted_file <- file.path(temp_dir, "converted.pptx")
+        convert_to_powerpoint(combined_pdf(), converted_file)
+        showNotification(paste("PDF converted to", format, "successfully!"), type = "message")
+        
       } else if (format == "Images (.png as a zip file)") {
-        converted_file <- convert_to_images(pdf_path, output_dir)
+        converted_file <- convert_to_images(combined_pdf(), temp_dir)
         showNotification(paste("PDF converted to", format, "successfully!"), type = "message")
       }
       
-      # Increment progress
       incProgress(0.8, detail = "Finalizing conversion...")
       
-      # Save the converted file path for download
       output$download_conversion_ui <- renderUI({
         shiny::req(converted_file)
-        downloadButton("download_conversion", paste0("Download ", format))
+        downloadButton("download_conversion", paste0("Download ", format)) # requires a new variable here
       })
       
-      # Download handler
       output$download_conversion <- downloadHandler(
         filename = function() {
           basename(converted_file)
@@ -435,10 +393,8 @@ server <- function(input, output, session) {
           file.copy(converted_file, file)
         }
       )
-    })
-  })
-  
+    }) # end of progress bar
+  }) # end of convert_btn
 } # end of server
 
-# Run the app
 shinyApp(ui = ui, server = server)
