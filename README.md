@@ -17,9 +17,9 @@ To run PDF Combiner locally, you may need to install a few R packages:
 ``` r
 install.packages(shiny)
 install.packages(pdftools)
-install.packages(magick)
-# install.packages(officer)  # Optional, used for PDF conversion to Word / Powerpoint
-# install.packages(openxlsx) # Optional, used for PDF conversion to Excel
+# install.packages(magick)   # Optional, only used for PDF conversion to Images (.png)
+# install.packages(officer)  # Optional, only used for PDF conversion to Word / Powerpoint
+# install.packages(openxlsx) # Optional, only used for PDF conversion to Excel
 ```
 
 ## Running the App

@@ -6,7 +6,6 @@ max_file_size    <- 300 # max file size in MB, change if needed
 
 library(shiny)
 library(pdftools)
-library(magick)
 
 options(shiny.maxRequestSize = max_file_size * 1024^2)
 
@@ -86,7 +85,7 @@ convert_to_powerpoint <- function(pdf_path, output_path) {
 
 convert_to_images <- function(pdf_path, output_dir, dpi = 300) {
   # Read the PDF as an image object
-  pdf_images <- image_read_pdf(pdf_path, density = dpi)
+  pdf_images <- magick::image_read_pdf(pdf_path, density = dpi)
   
   # Get the total number of pages
   total_pages <- length(pdf_images)
@@ -103,7 +102,7 @@ convert_to_images <- function(pdf_path, output_dir, dpi = 300) {
     png_path <- file.path(output_dir, paste0("page_", i, ".png"))
     
     # Save the image as a PNG file
-    image_write(page_image, path = png_path, format = "png")
+    magick::image_write(page_image, path = png_path, format = "png")
     png_files <- c(png_files, png_path)
   }
   
@@ -373,7 +372,7 @@ server <- function(input, output, session) {
         convert_to_powerpoint(combined_pdf(), converted_file)
         showNotification(paste("PDF converted to", format, "successfully!"), type = "message")
         
-      } else if (format == "Images (.png as a zip file)") {
+      } else if (format == "Images (.png as a zip file)" && package_check("magick")) {
         converted_file <- convert_to_images(combined_pdf(), temp_dir)
         showNotification(paste("PDF converted to", format, "successfully!"), type = "message")
       }
