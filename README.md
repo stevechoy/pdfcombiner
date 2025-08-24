@@ -1,6 +1,6 @@
 # PDF Combiner
 
-PDF Combiner is a simple <a href="https://lagom.shinyapps.io/PDF_Combiner/" target="_blank">R Shiny App</a> that allows merging of pdf files with page removal option.  
+PDF Combiner is a simple <a href="https://lagom.shinyapps.io/PDF_Combiner/" target="_blank">R Shiny App</a> that allows merging of pdf files with page removal and page rotation options.  
 It is a **fast, free, and secure alternative** to commercial software such as Adobe Acrobat and/or various online websites which require users to sign-up, and it avoids any potential risks associated with uploading files elsewhere.    
 
 Features include:  
@@ -39,9 +39,10 @@ Instructions are included on the left hand side of the page.
 
 ## Notes
 
+- If you want to install a free graphical tool, you can also check out <a href="https://www.pdflabs.com/tools/pdftk-the-pdf-toolkit/" target="_blank">PDFtk</a> (Windows only), which is the back-end for the `staplr` package.  
+- To retain bookmarks after combining PDFs, you need to install the `staplr` <a href="https://github.com/pridiltal/staplr/" target="_blank">package</a>. Importantly, bookmarks *cannot* be retained when any pages are removed or rotated.  
 - All PDF files are stored locally in a per-session temporary directory, given by the `tempdir()` function.  
 - Each original PDF file name must be different from each other.  
-- To retain bookmarks after combining PDFs, you need to install the `staplr` <a href="https://lagom.shinyapps.io/PDF_Combiner/" target="_blank">package</a>. Importantly, bookmarks *cannot* be retained when any pages are removed or rotated.
 
 ## Known Issues
 

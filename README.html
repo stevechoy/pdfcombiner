@@ -356,8 +356,8 @@ display: none;
 <h1>PDF Combiner</h1>
 <p>PDF Combiner is a simple
 <a href="https://lagom.shinyapps.io/PDF_Combiner/" target="_blank">R
-Shiny App</a> that allows merging of pdf files with page removal
-option.<br />
+Shiny App</a> that allows merging of pdf files with page removal and
+page rotation options.<br />
 It is a <strong>fast, free, and secure alternative</strong> to
 commercial software such as Adobe Acrobat and/or various online websites
 which require users to sign-up, and it avoids any potential risks
@@ -397,16 +397,21 @@ console (assuming you have the required packages listed above):</p>
 <div id="notes" class="section level2">
 <h2>Notes</h2>
 <ul>
-<li>All PDF files are stored locally in a per-session temporary
-directory, given by the <code>tempdir()</code> function.<br />
-</li>
-<li>Each original PDF file name must be different from each other.<br />
+<li>If you can install a free graphical tool, you can also check out
+<a href="https://www.pdflabs.com/tools/pdftk-the-pdf-toolkit/" target="_blank">PDFtk</a>
+(Windows only), which is the back-end for the <code>staplr</code>
+package.<br />
 </li>
 <li>To retain bookmarks after combining PDFs, you need to install the
 <code>staplr</code>
-<a href="https://lagom.shinyapps.io/PDF_Combiner/" target="_blank">package</a>.
+<a href="https://github.com/pridiltal/staplr/" target="_blank">package</a>.
 Importantly, bookmarks <em>cannot</em> be retained when any pages are
-removed or rotated.</li>
+removed or rotated.<br />
+</li>
+<li>All PDF files are stored locally in a per-session temporary
+directory, given by the <code>tempdir()</code> function.<br />
+</li>
+<li>Each original PDF file name must be different from each other.</li>
 </ul>
 </div>
 <div id="known-issues" class="section level2">
