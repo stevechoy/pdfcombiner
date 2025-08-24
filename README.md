@@ -39,3 +39,8 @@ Instructions are included on the left hand side of the page.
 
 - All PDF files are stored locally in a per-session temporary directory, given by the `tempdir()` function.  
 - Each original PDF file name must be different from each other.  
+
+## Known Issues
+
+- Bookmarks are currently not preserved.
+- Hyperlinks (e.g. created from LaTeX) are faulty and do not correctly cross-link.
