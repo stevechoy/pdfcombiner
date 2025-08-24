@@ -7,6 +7,7 @@ Features include:
 - Supports multiple upload of PDFs, either one at a time or all at once  
 - Select PDFs to be combined and change the order of files  
 - Remove pages by either using commas (1,2,3), hyphens (5-10), or a combination of both (1,2,3,5-10)  
+- Rotate pages  
 - Built-in PDF viewer / editor to verify changes  
 - Experimental feature of PDF conversion into Word, Excel, PowerPoint, or .png images  
 
@@ -17,6 +18,7 @@ To run PDF Combiner locally, you may need to install a few R packages:
 ``` r
 install.packages(shiny)
 install.packages(pdftools)
+# install.packages(staplr)   # Recommended, retains bookmarks (may need separate Java installation)
 # install.packages(magick)   # Optional, only used for PDF conversion to Images (.png)
 # install.packages(officer)  # Optional, only used for PDF conversion to Word / Powerpoint
 # install.packages(openxlsx) # Optional, only used for PDF conversion to Excel
@@ -39,8 +41,8 @@ Instructions are included on the left hand side of the page.
 
 - All PDF files are stored locally in a per-session temporary directory, given by the `tempdir()` function.  
 - Each original PDF file name must be different from each other.  
+- To retain bookmarks after combining PDFs, you need to install the `staplr` <a href="https://lagom.shinyapps.io/PDF_Combiner/" target="_blank">package</a>. Importantly, bookmarks *cannot* be retained when any pages are removed or rotated.
 
 ## Known Issues
 
-- Bookmarks are currently not preserved.
-- Hyperlinks (e.g. created from LaTeX) are faulty and do not correctly cross-link.
+- Hyperlinks may not correctly cross-link if you don't have the `staplr` package.

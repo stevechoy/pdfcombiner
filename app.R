@@ -1,6 +1,6 @@
 ### PDF Combiner - Options #####################################################
 
-max_file_size    <- 300 # max file size in MB, change if needed
+max_file_size    <- 500 # max file size in MB, change if needed
 
 ### Setup ######################################################################
 
@@ -19,12 +19,21 @@ if (requireNamespace("shinythemes", quietly = TRUE)) {
 
 ### Functions ##################################################################
 
-package_check <- function(pkg_name) {
+package_check <- function(pkg_name, bookmarks = FALSE, silent = FALSE) {
   if (!requireNamespace(pkg_name, quietly = TRUE)) {
-    showNotification(
-      paste0("The '", pkg_name, "' package is not installed. Please install it to use this feature."),
-      type = "error"
-    )
+    if(!silent) {
+      if(bookmarks) {
+        showNotification(
+          paste0("The '", pkg_name, "' package is not installed. Please install it to retain bookmarks."),
+          type = "warning"
+        )      
+      } else {
+        showNotification(
+          paste0("The '", pkg_name, "' package is not installed. Please install it to use this feature."),
+          type = "error"
+        )
+      }
+    }
     return(FALSE)
   } else {
     return(TRUE)
@@ -163,17 +172,57 @@ ui <- fluidPage(
       
       tags$hr(style = "border: 2px solid #ccc;"), # Grey divider line
       
+      # Custom text with inline question mark tooltip
+      tags$div(
+        style = "display: flex; align-items: center;",  # Align label and input inline
+        tags$label(
+          "Enter (Current) Page Numbers to Remove: ",
+          tags$span(
+            "?",
+            style = "color: blue; cursor: help; font-weight: bold; margin-left: 5px; font-size: 15px;",
+            title = "Note: Bookmarks will not be retained when pages are removed."
+          )
+        )
+      ),
+      
       # Page removal input
-      textInput("remove_pages", "Enter (Current) Page Numbers to Remove:", value = ""),
+      textInput("remove_pages", label = NULL, value = "", placeholder = "e.g. '1, 2, 3, 5-10'"), # Input without default label
       
       # Buttons side by side with 20px gap
       div(
         style = "display: flex; align-items: center; gap: 20px;",
-        actionButton("remove_pages_btn", 
+        actionButton("remove_pages_btn",
                      label = tagList(icon("xmark", class = "fa-lg"), "Remove Pages")),  # Remove Pages button with xmark icon
         actionButton("reset_btn", 
                      label = tagList(icon("sync-alt", class = "fa-lg"), "Reset")),  # Reset button with refresh icon
         uiOutput("download_ui")
+      ),
+      
+      tags$hr(style = "border: 2px solid #ccc;"), # Grey divider line
+      
+      # Custom text with inline question mark tooltip
+      tags$div(
+        style = "display: flex; align-items: center;",  # Align label and input inline
+        tags$label(
+          "Enter (Current) Page Numbers to Rotate: ",
+          tags$span(
+            "?",
+            style = "color: blue; cursor: help; font-weight: bold; margin-left: 5px; font-size: 15px;",
+            title = "Note: Bookmarks will not be retained when pages are rotated."
+          )
+        )
+      ),
+      
+      # Page rotate input
+      textInput("rotate_pages", label = NULL, value = "", placeholder = "e.g. '1, 2, 3, 5-10'"),
+      
+      # Buttons side by side with 20px gap
+      div(
+        style = "display: flex; align-items: center; gap: 20px;",
+        actionButton("rotate_pages_btn",
+                     label = tagList(icon("rotate-left", class = "fa-lg"), "Rotate Pages (90\u00B0 counterclockwise)")),  # Remove Pages button with xmark icon
+        actionButton("reset_btn_rot", 
+                     label = tagList(icon("sync-alt", class = "fa-lg"), "Reset"))#,  # Reset button with refresh icon
       ),
       
       tags$hr(style = "border: 2px solid #ccc;"), # Grey divider line
@@ -193,7 +242,7 @@ ui <- fluidPage(
       ),
       
       br(),
-      tags$p("Author: Steve Choy (v1.3)",
+      tags$p("Author: Steve Choy (v1.4)",
              a(href = "https://github.com/stevechoy/PDF_Combiner", "(GitHub Repo)", target = "_blank"),
              style = "font-size: 0.9em; color: #555; text-align: left;")
     ), # end of sidebarPanel
@@ -213,10 +262,15 @@ server <- function(input, output, session) {
   original_pdf <- reactiveVal(NULL)     # Stores the original combined PDF path
   temp_dir <- tempdir()                 # Temporary directory for storing combined PDFs
   shiny::addResourcePath("pdfs", temp_dir)  # Serve files from the temp directory
+  #rotation_angle <- reactiveVal(0)      # Reactive value to store the current rotation angle for staplr, not currently used
   
   # Helper function to combine PDFs
   combine_pdfs <- function(pdf_paths, output_path) {
+    if(package_check("staplr", bookmarks = TRUE)) {
+      staplr::staple_pdf(input_files = unlist(pdf_paths), output_filepath = output_path)
+    } else {
     pdf_combine(unlist(pdf_paths), output = output_path)
+    }
     combined_pdf(output_path)
     original_pdf(output_path) # Save the original combined PDF
     print(paste("Combined PDF Path:", output_path)) # Debugging: Print combined PDF path
@@ -320,7 +374,12 @@ server <- function(input, output, session) {
     
     # Create a new PDF with the remaining pages
     updated_pdf_path <- file.path(temp_dir, paste0("updated_", format(Sys.time(), "%Y%m%d%H%M%S"), ".pdf"))
-    pdf_subset(pdf_path, pages = pages_to_keep, output = updated_pdf_path)
+    
+    #if(package_check("staplr", silent = TRUE)) {
+    #  staplr::select_pages(selpages = pages_to_keep, input_filepath = pdf_path, output_filepath = updated_pdf_path)
+    #} else {
+      pdf_subset(pdf_path, pages = pages_to_keep, output = updated_pdf_path)
+    #}
     combined_pdf(updated_pdf_path)  # Update the combined PDF
     
     # Debugging: Print updated PDF path
@@ -328,11 +387,64 @@ server <- function(input, output, session) {
     showNotification("Pages removed successfully!", type = "message")
   })
   
+  # Rotate Pages
+  observeEvent(input$rotate_pages_btn, {
+    shiny::req(combined_pdf(), input$rotate_pages)
+    
+    # Parse the page numbers to remove
+    pages_to_rotate <- parse_pages_to_remove(input$rotate_pages)
+    
+    # Debugging: Print pages to remove
+    print(paste("Pages to Rotate:", paste(pages_to_rotate, collapse = ", ")))
+    
+    # Read the combined PDF
+    pdf_path <- combined_pdf()
+    total_pages <- pdf_info(pdf_path)$pages
+    
+    # Validate page numbers
+    if (any(pages_to_rotate < 1 | pages_to_rotate > total_pages)) {
+      showNotification("Invalid page numbers. Please enter valid page numbers within the range of the PDF.", type = "error")
+      return()
+    }
+    
+    # Check if there are any pages left to rotate
+    if (length(pages_to_rotate) == 0) {
+      return()
+    }
+    
+    # Create a new PDF with the remaining pages
+    updated_pdf_path <- file.path(temp_dir, paste0("updated_", format(Sys.time(), "%Y%m%d%H%M%S"), ".pdf"))
+    
+    # if(package_check("staplr", silent = TRUE)) {
+    #   new_angle <- (rotation_angle() - 90) %% 360  # # Decrement the rotation angle by 90 degrees (counterclockwise), Cycle back to 270 after -90
+    #   if (new_angle < 0) new_angle <- new_angle + 360  # Handle negative values
+    #   rotation_angle(new_angle)
+    #   # Debugging: Print Rotation angle
+    #   print(paste("Rotation angle:", rotation_angle()))
+    #   staplr::rotate_pages(rotatepages = pages_to_rotate, page_rotation = rotation_angle(), input_filepath = pdf_path, output_filepath = updated_pdf_path)
+    # } else {
+    qpdf::pdf_rotate_pages(pdf_path, pages = pages_to_rotate, angle = 270, relative = TRUE, output = updated_pdf_path)
+    #}
+    combined_pdf(updated_pdf_path)  # Update the combined PDF
+    
+    # Debugging: Print updated PDF path
+    print(paste("Updated PDF Path:", updated_pdf_path))
+    showNotification("Pages rotated successfully!", type = "message")
+  })
+  
   # Reset Button
   observeEvent(input$reset_btn, {
     shiny::req(original_pdf())  # Ensure there is an original combined PDF
     combined_pdf(original_pdf())  # Restore the original combined PDF
     updateTextInput(session, "remove_pages", value = "")  # Reset page removal input
+    showNotification("Page reset successful! Restored to the current list of PDFs.", type = "message")
+  })
+  
+  # Reset Button
+  observeEvent(input$reset_btn_rot, {
+    shiny::req(original_pdf())  # Ensure there is an original combined PDF
+    combined_pdf(original_pdf())  # Restore the original combined PDF
+    updateTextInput(session, "rotate_pages", value = "")  # Reset page removal input
     showNotification("Page reset successful! Restored to the current list of PDFs.", type = "message")
   })
   

@@ -368,6 +368,7 @@ once<br />
 - Select PDFs to be combined and change the order of files<br />
 - Remove pages by either using commas (1,2,3), hyphens (5-10), or a
 combination of both (1,2,3,5-10)<br />
+- Rotate pages<br />
 - Built-in PDF viewer / editor to verify changes<br />
 - Experimental feature of PDF conversion into Word, Excel, PowerPoint,
 or .png images</p>
@@ -377,6 +378,7 @@ or .png images</p>
 packages:</p>
 <pre class="r"><code>install.packages(shiny)
 install.packages(pdftools)
+# install.packages(staplr)   # Recommended, retains bookmarks (may need separate Java installation)
 # install.packages(magick)   # Optional, only used for PDF conversion to Images (.png)
 # install.packages(officer)  # Optional, only used for PDF conversion to Word / Powerpoint
 # install.packages(openxlsx) # Optional, only used for PDF conversion to Excel</code></pre>
@@ -398,15 +400,20 @@ console (assuming you have the required packages listed above):</p>
 <li>All PDF files are stored locally in a per-session temporary
 directory, given by the <code>tempdir()</code> function.<br />
 </li>
-<li>Each original PDF file name must be different from each other.</li>
+<li>Each original PDF file name must be different from each other.<br />
+</li>
+<li>To retain bookmarks after combining PDFs, you need to install the
+<code>staplr</code>
+<a href="https://lagom.shinyapps.io/PDF_Combiner/" target="_blank">package</a>.
+Importantly, bookmarks <em>cannot</em> be retained when any pages are
+removed or rotated.</li>
 </ul>
 </div>
 <div id="known-issues" class="section level2">
 <h2>Known Issues</h2>
 <ul>
-<li>Bookmarks are currently not preserved.</li>
-<li>Hyperlinks (e.g. created from LaTeX) are faulty and do not correctly
-cross-link.</li>
+<li>Hyperlinks may not correctly cross-link if you don’t have the
+<code>staplr</code> package.</li>
 </ul>
 </div>
 </div>
