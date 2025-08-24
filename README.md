@@ -35,7 +35,7 @@ shiny::runGitHub("PDF_Combiner", username = "stevechoy", launch.browser = TRUE)
 ```
 Instructions are included on the left hand side of the page.
 
-![](example.png)
+![](example2.png)
 
 ## Notes
 
