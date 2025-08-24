@@ -17,6 +17,11 @@ if (requireNamespace("shinythemes", quietly = TRUE)) {
   app_theme <- NULL  # Default to no theme if shinythemes is not installed
 }
 
+# Check if staplr is installed, recommended for handling bookmarks
+if (requireNamespace("staplr", quietly = TRUE)) {
+  library(rJava)
+  library(staplr)
+} 
 ### Functions ##################################################################
 
 package_check <- function(pkg_name, bookmarks = FALSE, silent = FALSE) {
