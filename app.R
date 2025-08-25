@@ -1,7 +1,7 @@
 ### PDF Combiner - Options #####################################################
 
 max_file_size    <- 500 # max file size in MB, change if needed
-bootstrap_theme  <- TRUE # Uses bslib bootstrap theme to allow minimizing sidebar
+bootstrap_theme  <- TRUE # When TRUE, uses bslib bootstrap theme to allow minimizing sidebar
 
 ### Setup ######################################################################
 
