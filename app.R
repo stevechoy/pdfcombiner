@@ -1,6 +1,7 @@
 ### PDF Combiner - Options #####################################################
 
 max_file_size    <- 500 # max file size in MB, change if needed
+bootstrap_theme  <- TRUE # Uses bslib bootstrap theme to allow minimizing sidebar
 
 ### Setup ######################################################################
 
@@ -148,7 +149,7 @@ parse_pages_to_remove <- function(input_string) {
 ### Shiny App ##################################################################
 
 # UI
-ui <- if (requireNamespace("bslib", quietly = TRUE)) { # Loads a bootstrap UI if bslib is installed
+ui <- if (requireNamespace("bslib", quietly = TRUE) && bootstrap_theme) { # Loads a bootstrap UI if bslib is installed
   library(bslib)
   page_sidebar(
     theme = bs_theme(version = 5, # Use Bootstrap 5
