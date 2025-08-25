@@ -2,6 +2,7 @@
 
 max_file_size    <- 500 # max file size in MB, change if needed
 bootstrap_theme  <- TRUE # When TRUE, uses bslib bootstrap theme to allow minimizing sidebar
+sidebar_width    <- 750 # Only applicable when bootstrap theme is used, in pixels
 
 ### Setup ######################################################################
 
@@ -156,7 +157,7 @@ ui <- if (requireNamespace("bslib", quietly = TRUE) && bootstrap_theme) { # Load
                      preset = "flatly", # cerulean
                      font_scale = 1), 
     sidebar = sidebar(
-      width = 750,
+      width = sidebar_width,
       title = "PDF Combiner - Instructions",
       p("1. Upload PDF file(s). All files will be combined automatically by default."),
       p("2. Use the file selector to choose which files to include, and click the 'Update / Combine PDF' button."),
