@@ -19,7 +19,7 @@ if (requireNamespace("shinythemes", quietly = TRUE)) {
 
 # Check if staplr is installed, recommended for handling bookmarks
 if (requireNamespace("staplr", quietly = TRUE)) {
-  library(rJava)
+  library(rJava) # If running this line fails, that means you need to install Java separately
   library(staplr)
 } 
 ### Functions ##################################################################
@@ -148,14 +148,15 @@ parse_pages_to_remove <- function(input_string) {
 ### Shiny App ##################################################################
 
 # UI
-ui <- fluidPage(
-  theme = app_theme,
-  tags$head(tags$title("PDF Combiner")),
-  
-  sidebarLayout(
-    sidebarPanel(
-      width = 5,
-      h4("PDF Combiner - Instructions"),
+ui <- if (requireNamespace("bslib", quietly = TRUE)) { # Loads a bootstrap UI if bslib is installed
+  library(bslib)
+  page_sidebar(
+    theme = bs_theme(version = 5, # Use Bootstrap 5
+                     preset = "flatly", # cerulean
+                     font_scale = 1), 
+    sidebar = sidebar(
+      width = 750,
+      title = "PDF Combiner - Instructions",
       p("1. Upload PDF file(s). All files will be combined automatically by default."),
       p("2. Use the file selector to choose which files to include, and click the 'Update / Combine PDF' button."),
       tags$div(
@@ -165,102 +166,211 @@ ui <- fluidPage(
         tags$p("- Both options can be used together (e.g., `1,2,3,5-10`).", style = "text-indent: 20px;"),
         tags$p("4. Verify changes on the right and download the updated PDF.")
       ),
-      br(),
       
-      fileInput("pdf_files", paste0("Upload PDF File(s): [Max ", max_file_size, " MB]"), multiple = TRUE, accept = ".pdf"),  # Allow multiple file uploads
-      
-      # Selector for choosing PDFs to combine
-      selectInput("selected_pdfs", "Select PDFs to Combine (in order):", choices = NULL, multiple = TRUE),
-      
-      # Combine PDF button directly below the selector
-      actionButton("combine_btn", "Update / Combine PDF", style = "margin-top: 0px;"),
-      
-      tags$hr(style = "border: 2px solid #ccc;"), # Grey divider line
-      
-      # Custom text with inline question mark tooltip
-      tags$div(
-        style = "display: flex; align-items: center;",  # Align label and input inline
-        tags$label(
-          "Enter (Current) Page Numbers to Remove: ",
-          tags$span(
-            "?",
-            style = "color: blue; cursor: help; font-weight: bold; margin-left: 5px; font-size: 15px;",
-            title = "Note: Bookmarks will not be retained when pages are removed."
-          )
-        )
+      card(card_header("Input Files"),
+           fileInput("pdf_files", paste0("Upload PDF File(s): [Max ", max_file_size, " MB]"), multiple = TRUE, accept = ".pdf"),  # Allow multiple file uploads
+           
+           # Selector for choosing PDFs to combine
+           selectInput("selected_pdfs", "Select PDFs to Combine (in order):", choices = NULL, multiple = TRUE),
+           
+           # Combine PDF button directly below the selector
+           actionButton("combine_btn", "Update / Combine PDF", style = "margin-top: 0px;")
       ),
       
-      # Page removal input
-      textInput("remove_pages", label = NULL, value = "", placeholder = "e.g. '1, 2, 3, 5-10'"), # Input without default label
+      card(card_header("Page Editor"),
+           # Custom text with inline question mark tooltip
+           tags$div(
+             style = "display: flex; align-items: center;",  # Align label and input inline
+             tags$label(
+               "Enter (Current) Page Numbers to Remove: ",
+               tags$span(
+                 "?",
+                 style = "color: blue; cursor: help; font-weight: bold; margin-left: 5px; font-size: 20px;",
+                 title = "Note: Bookmarks will not be retained when pages are removed."
+               )
+             )
+           ),
+           
+           # Page removal input
+           textInput("remove_pages", label = NULL, value = "", placeholder = "e.g. '1, 2, 3, 5-10'"), # Input without default label
+           
+           # Buttons side by side with 20px gap
+           div(
+             style = "display: flex; align-items: center; gap: 20px;",
+             actionButton("remove_pages_btn",
+                          label = tagList(icon("xmark", class = "fa-lg"), "Remove Pages")),  # Remove Pages button with xmark icon
+             actionButton("reset_btn", 
+                          label = tagList(icon("sync-alt", class = "fa-lg"), "Reset")),  # Reset button with refresh icon
+             uiOutput("download_ui")
+           ),
+           
+           #tags$hr(style = "border: 2px solid #ccc;"), # Grey divider line
+           
+           # Custom text with inline question mark tooltip
+           tags$div(
+             style = "display: flex; align-items: center;",  # Align label and input inline
+             tags$label(
+               "Enter (Current) Page Numbers to Rotate: ",
+               tags$span(
+                 "?",
+                 style = "color: blue; cursor: help; font-weight: bold; margin-left: 5px; font-size: 20px;",
+                 title = "Note: Bookmarks will not be retained when pages are rotated."
+               )
+             )
+           ),
+           
+           # Page rotate input
+           textInput("rotate_pages", label = NULL, value = "", placeholder = "e.g. '1, 2, 3, 5-10'"),
+           
+           # Buttons side by side with 20px gap
+           div(
+             style = "display: flex; align-items: center; gap: 20px;",
+             actionButton("rotate_pages_btn",
+                          label = tagList(icon("rotate-left", class = "fa-lg"), "Rotate Pages (90\u00B0 counterclockwise)")),  # Remove Pages button with xmark icon
+             actionButton("reset_btn_rot", 
+                          label = tagList(icon("sync-alt", class = "fa-lg"), "Reset"))#,  # Reset button with refresh icon
+           )
+      ), # end of card
       
-      # Buttons side by side with 20px gap
-      div(
-        style = "display: flex; align-items: center; gap: 20px;",
-        actionButton("remove_pages_btn",
-                     label = tagList(icon("xmark", class = "fa-lg"), "Remove Pages")),  # Remove Pages button with xmark icon
-        actionButton("reset_btn", 
-                     label = tagList(icon("sync-alt", class = "fa-lg"), "Reset")),  # Reset button with refresh icon
-        uiOutput("download_ui")
+      card(card_header("PDF Conversion"),
+           # Dropdown for selecting output format
+           selectInput(
+             "convert_format",
+             "(Experimental) Convert Updated PDF to:",
+             choices = c("Word (.docx)", "Excel (.xlsx)", "PowerPoint (.pptx)", "Images (.png as a zip file)"),
+             selected = "Word (.docx)"
+           ),
+           
+           div(
+             style = "display: flex; align-items: center; gap: 20px;", # Flexbox layout with 20px gap
+             actionButton("convert_btn", "Convert PDF"),               # Conversion button
+             uiOutput("download_conversion_ui")                        # UI for downloading converted file
+           )
       ),
-      
-      tags$hr(style = "border: 2px solid #ccc;"), # Grey divider line
-      
-      # Custom text with inline question mark tooltip
-      tags$div(
-        style = "display: flex; align-items: center;",  # Align label and input inline
-        tags$label(
-          "Enter (Current) Page Numbers to Rotate: ",
-          tags$span(
-            "?",
-            style = "color: blue; cursor: help; font-weight: bold; margin-left: 5px; font-size: 15px;",
-            title = "Note: Bookmarks will not be retained when pages are rotated."
-          )
-        )
-      ),
-      
-      # Page rotate input
-      textInput("rotate_pages", label = NULL, value = "", placeholder = "e.g. '1, 2, 3, 5-10'"),
-      
-      # Buttons side by side with 20px gap
-      div(
-        style = "display: flex; align-items: center; gap: 20px;",
-        actionButton("rotate_pages_btn",
-                     label = tagList(icon("rotate-left", class = "fa-lg"), "Rotate Pages (90\u00B0 counterclockwise)")),  # Remove Pages button with xmark icon
-        actionButton("reset_btn_rot", 
-                     label = tagList(icon("sync-alt", class = "fa-lg"), "Reset"))#,  # Reset button with refresh icon
-      ),
-      
-      tags$hr(style = "border: 2px solid #ccc;"), # Grey divider line
-      
-      # Dropdown for selecting output format
-      selectInput(
-        "convert_format",
-        "(Experimental) Convert Updated PDF to:",
-        choices = c("Word (.docx)", "Excel (.xlsx)", "PowerPoint (.pptx)", "Images (.png as a zip file)"),
-        selected = "Word (.docx)"
-      ),
-      
-      div(
-        style = "display: flex; align-items: center; gap: 20px;", # Flexbox layout with 20px gap
-        actionButton("convert_btn", "Convert PDF"),               # Conversion button
-        uiOutput("download_conversion_ui")                        # UI for downloading converted file
-      ),
-      
-      br(),
-      tags$p("Author: Steve Choy (v1.4)",
+      tags$p("Author: Steve Choy (v1.5)",
              a(href = "https://github.com/stevechoy/PDF_Combiner", "(GitHub Repo)", target = "_blank"),
              style = "font-size: 0.9em; color: #555; text-align: left;")
-    ), # end of sidebarPanel
+    ), # end of sidebar
     
-    mainPanel(
-      width = 7,
-      htmlOutput("pdfviewer")  # Embedded PDF viewer
-    )
-  ) # end of sidebarLayout
-) # end of ui
+    htmlOutput("pdfviewer")  # Embedded PDF viewer
+  ) # end of page_sidebar
+  
+} else {
+  fluidPage(
+    theme = app_theme,
+    tags$head(tags$title("PDF Combiner")),
+    
+    sidebarLayout(
+      sidebarPanel(
+        width = 5,
+        h4("PDF Combiner - Instructions"),
+        p("1. Upload PDF file(s). All files will be combined automatically by default."),
+        p("2. Use the file selector to choose which files to include, and click the 'Update / Combine PDF' button."),
+        tags$div(
+          tags$p("3. Use the page removal option to remove unwanted pages from the combined PDF:"),
+          tags$p("- Enter page numbers separated by commas (e.g., `1,2,3`).", style = "text-indent: 20px;"),
+          tags$p("- Use hyphens for ranges (e.g., `5-10`).", style = "text-indent: 20px;"),
+          tags$p("- Both options can be used together (e.g., `1,2,3,5-10`).", style = "text-indent: 20px;"),
+          tags$p("4. Verify changes on the right and download the updated PDF.")
+        ),
+        br(),
+        
+        fileInput("pdf_files", paste0("Upload PDF File(s): [Max ", max_file_size, " MB]"), multiple = TRUE, accept = ".pdf"),  # Allow multiple file uploads
+        
+        # Selector for choosing PDFs to combine
+        selectInput("selected_pdfs", "Select PDFs to Combine (in order):", choices = NULL, multiple = TRUE),
+        
+        # Combine PDF button directly below the selector
+        actionButton("combine_btn", "Update / Combine PDF", style = "margin-top: 0px;"),
+        
+        tags$hr(style = "border: 2px solid #ccc;"), # Grey divider line
+        
+        # Custom text with inline question mark tooltip
+        tags$div(
+          style = "display: flex; align-items: center;",  # Align label and input inline
+          tags$label(
+            "Enter (Current) Page Numbers to Remove: ",
+            tags$span(
+              "?",
+              style = "color: blue; cursor: help; font-weight: bold; margin-left: 5px; font-size: 20px;",
+              title = "Note: Bookmarks will not be retained when pages are removed."
+            )
+          )
+        ),
+        
+        # Page removal input
+        textInput("remove_pages", label = NULL, value = "", placeholder = "e.g. '1, 2, 3, 5-10'"), # Input without default label
+        
+        # Buttons side by side with 20px gap
+        div(
+          style = "display: flex; align-items: center; gap: 20px;",
+          actionButton("remove_pages_btn",
+                       label = tagList(icon("xmark", class = "fa-lg"), "Remove Pages")),  # Remove Pages button with xmark icon
+          actionButton("reset_btn", 
+                       label = tagList(icon("sync-alt", class = "fa-lg"), "Reset")),  # Reset button with refresh icon
+          uiOutput("download_ui")
+        ),
+        
+        tags$hr(style = "border: 2px solid #ccc;"), # Grey divider line
+        
+        # Custom text with inline question mark tooltip
+        tags$div(
+          style = "display: flex; align-items: center;",  # Align label and input inline
+          tags$label(
+            "Enter (Current) Page Numbers to Rotate: ",
+            tags$span(
+              "?",
+              style = "color: blue; cursor: help; font-weight: bold; margin-left: 5px; font-size: 20px;",
+              title = "Note: Bookmarks will not be retained when pages are rotated."
+            )
+          )
+        ),
+        
+        # Page rotate input
+        textInput("rotate_pages", label = NULL, value = "", placeholder = "e.g. '1, 2, 3, 5-10'"),
+        
+        # Buttons side by side with 20px gap
+        div(
+          style = "display: flex; align-items: center; gap: 20px;",
+          actionButton("rotate_pages_btn",
+                       label = tagList(icon("rotate-left", class = "fa-lg"), "Rotate Pages (90\u00B0 counterclockwise)")),  # Remove Pages button with xmark icon
+          actionButton("reset_btn_rot", 
+                       label = tagList(icon("sync-alt", class = "fa-lg"), "Reset"))#,  # Reset button with refresh icon
+        ),
+        
+        tags$hr(style = "border: 2px solid #ccc;"), # Grey divider line
+        
+        # Dropdown for selecting output format
+        selectInput(
+          "convert_format",
+          "(Experimental) Convert Updated PDF to:",
+          choices = c("Word (.docx)", "Excel (.xlsx)", "PowerPoint (.pptx)", "Images (.png as a zip file)"),
+          selected = "Word (.docx)"
+        ),
+        
+        div(
+          style = "display: flex; align-items: center; gap: 20px;", # Flexbox layout with 20px gap
+          actionButton("convert_btn", "Convert PDF"),               # Conversion button
+          uiOutput("download_conversion_ui")                        # UI for downloading converted file
+        ),
+        
+        br(),
+        tags$p("Author: Steve Choy (v1.5)",
+               a(href = "https://github.com/stevechoy/PDF_Combiner", "(GitHub Repo)", target = "_blank"),
+               style = "font-size: 0.9em; color: #555; text-align: left;")
+      ), # end of sidebarPanel
+      
+      mainPanel(
+        width = 7,
+        htmlOutput("pdfviewer")  # Embedded PDF viewer
+      )
+    ) # end of sidebarLayout
+  ) # end of ui regular
+} # end of ui conditional check
 
 # Server
 server <- function(input, output, session) {
+  
   # Reactive values to store uploaded PDFs and their original names
   uploaded_pdfs <- reactiveVal(list())  # List to store uploaded PDFs
   combined_pdf <- reactiveVal(NULL)     # Stores the combined PDF path
@@ -274,7 +384,7 @@ server <- function(input, output, session) {
     if(package_check("staplr", bookmarks = TRUE)) {
       staplr::staple_pdf(input_files = unlist(pdf_paths), output_filepath = output_path)
     } else {
-    pdf_combine(unlist(pdf_paths), output = output_path)
+      pdf_combine(unlist(pdf_paths), output = output_path)
     }
     combined_pdf(output_path)
     original_pdf(output_path) # Save the original combined PDF
@@ -383,7 +493,7 @@ server <- function(input, output, session) {
     #if(package_check("staplr", silent = TRUE)) {
     #  staplr::select_pages(selpages = pages_to_keep, input_filepath = pdf_path, output_filepath = updated_pdf_path)
     #} else {
-      pdf_subset(pdf_path, pages = pages_to_keep, output = updated_pdf_path)
+    pdf_subset(pdf_path, pages = pages_to_keep, output = updated_pdf_path)
     #}
     combined_pdf(updated_pdf_path)  # Update the combined PDF
     

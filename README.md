@@ -19,6 +19,7 @@ To run PDF Combiner locally, you may need to install a few R packages:
 install.packages(shiny)
 install.packages(pdftools)
 # install.packages(staplr)   # Recommended, retains bookmarks (may need separate Java installation)
+# install.packages(bslib)    # Optional, allows minimization of sidebar
 # install.packages(magick)   # Optional, only used for PDF conversion to Images (.png)
 # install.packages(officer)  # Optional, only used for PDF conversion to Word / Powerpoint
 # install.packages(openxlsx) # Optional, only used for PDF conversion to Excel
@@ -39,11 +40,11 @@ Instructions are included on the left hand side of the page.
 
 ## Notes
 
-- If you want to install a free graphical tool, you can also check out <a href="https://www.pdflabs.com/tools/pdftk-the-pdf-toolkit/" target="_blank">PDFtk</a> (Windows only), which is the back-end for the `staplr` package.  
-- To retain bookmarks after combining PDFs, you need to install the `staplr` <a href="https://github.com/pridiltal/staplr/" target="_blank">package</a>. Importantly, bookmarks *cannot* be retained when any pages are removed or rotated.  
+- If you want to install a free graphical tool, you can also check out <a href="https://www.pdflabs.com/tools/pdftk-the-pdf-toolkit/" target="_blank">PDFtk</a> (Windows only), which is the back-end for the `{staplr}` package.  
+- To retain bookmarks after combining PDFs, you need to install the `{staplr}` <a href="https://github.com/pridiltal/staplr/" target="_blank">package</a>. Importantly, bookmarks *cannot* be retained when any pages are removed or rotated.  
 - All PDF files are stored locally in a per-session temporary directory, given by the `tempdir()` function.  
 - Each original PDF file name must be different from each other.  
 
 ## Known Issues
 
-- Hyperlinks may not correctly cross-link if you don't have the `staplr` package.
+- Hyperlinks may not correctly cross-link if you don't have the `{staplr}` package.
