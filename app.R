@@ -234,6 +234,31 @@ ui <- if (requireNamespace("bslib", quietly = TRUE) && bootstrap_theme) { # Load
            )
       ), # end of card
       
+      card(card_header("Remove Password Protection"),
+           
+           # Custom text with inline question mark tooltip
+           tags$div(
+             style = "display: flex; align-items: center;",  # Align label and input inline
+             tags$label(
+               paste0("Upload Password-protected PDF File: [Max ", max_file_size, " MB]"),
+               tags$span(
+                 "?",
+                 style = "color: blue; cursor: help; font-weight: bold; margin-left: 5px; font-size: 20px;",
+                 title = "Note: Bookmarks will not be retained when PDFs are unlocked."
+               )
+             )
+           ),
+           
+           fileInput("locked_pdf", label = NULL, multiple = FALSE, accept = ".pdf"),
+           textInput("password", label = "Password:", value = "", placeholder = "Enter password here"),
+           div(
+             style = "display: flex; align-items: center; gap: 20px;", # Flexbox layout with 20px gap
+             actionButton("unlock_btn",
+                          label = tagList(icon("lock-open", class = "fa-lg"), "Unlock PDF")), # Unlock button
+             uiOutput("download_unlocked_ui")                        # UI for downloading unlocked file
+           )
+      ),
+      
       card(card_header("PDF Conversion"),
            # Dropdown for selecting output format
            selectInput(
@@ -249,7 +274,8 @@ ui <- if (requireNamespace("bslib", quietly = TRUE) && bootstrap_theme) { # Load
              uiOutput("download_conversion_ui")                        # UI for downloading converted file
            )
       ),
-      tags$p("Author: Steve Choy (v1.5)",
+      
+      tags$p("Author: Steve Choy (v1.6)",
              a(href = "https://github.com/stevechoy/PDF_Combiner", "(GitHub Repo)", target = "_blank"),
              style = "font-size: 0.9em; color: #555; text-align: left;")
     ), # end of sidebar
@@ -341,6 +367,29 @@ ui <- if (requireNamespace("bslib", quietly = TRUE) && bootstrap_theme) { # Load
         ),
         
         tags$hr(style = "border: 2px solid #ccc;"), # Grey divider line
+
+        tags$div(
+          style = "display: flex; align-items: center;",  # Align label and input inline
+          tags$label(
+            paste0("Upload Password-protected PDF File: [Max ", max_file_size, " MB]"),
+            tags$span(
+              "?",
+              style = "color: blue; cursor: help; font-weight: bold; margin-left: 5px; font-size: 20px;",
+              title = "Note: Bookmarks will not be retained when PDFs are unlocked."
+            )
+          )
+        ),
+        
+        fileInput("locked_pdf", label = NULL, multiple = FALSE, accept = ".pdf"),
+        textInput("password", label = "Password:", value = "", placeholder = "Enter password here"),
+        div(
+          style = "display: flex; align-items: center; gap: 20px;", # Flexbox layout with 20px gap
+          actionButton("unlock_btn",
+                       label = tagList(icon("lock-open", class = "fa-lg"), "Unlock PDF")), # Unlock button
+          uiOutput("download_unlocked_ui")                        # UI for downloading unlocked file
+        ),
+        
+        tags$hr(style = "border: 2px solid #ccc;"), # Grey divider line
         
         # Dropdown for selecting output format
         selectInput(
@@ -357,7 +406,7 @@ ui <- if (requireNamespace("bslib", quietly = TRUE) && bootstrap_theme) { # Load
         ),
         
         br(),
-        tags$p("Author: Steve Choy (v1.5)",
+        tags$p("Author: Steve Choy (v1.6)",
                a(href = "https://github.com/stevechoy/PDF_Combiner", "(GitHub Repo)", target = "_blank"),
                style = "font-size: 0.9em; color: #555; text-align: left;")
       ), # end of sidebarPanel
@@ -380,6 +429,7 @@ server <- function(input, output, session) {
   temp_dir <- tempdir()                 # Temporary directory for storing combined PDFs
   shiny::addResourcePath("pdfs", temp_dir)  # Serve files from the temp directory
   #rotation_angle <- reactiveVal(0)      # Reactive value to store the current rotation angle for staplr, not currently used
+  unlocked_pdf <- reactiveVal(NULL)     # Stores unlocked PDF path (singular file)
   
   # Helper function to combine PDFs
   combine_pdfs <- function(pdf_paths, output_path) {
@@ -623,6 +673,50 @@ server <- function(input, output, session) {
       )
     }) # end of progress bar
   }) # end of convert_btn
+  
+  # Observe password-file upload
+  observeEvent(input$unlock_btn, {
+    shiny::req(input$locked_pdf)
+    shiny::req(input$password)
+    
+    # Add the new PDFs to the list of uploaded locked PDFs
+    current_locked_pdf <- list()
+
+    for (i in seq_along(input$locked_pdf$name)) {
+      current_locked_pdf[[input$locked_pdf$name[i]]] <- input$locked_pdf$datapath[i]
+    }
+    
+    unlocked_file_path <- file.path(temp_dir, paste0("unlocked_", format(Sys.time(), "%Y%m%d%H%M%S"), ".pdf"))
+    
+    # Remove the password and save as a regular PDF
+    tryCatch({
+      pdftools::pdf_combine(input = unlist(current_locked_pdf),
+                            output = unlocked_file_path,
+                            password = input$password)
+      
+    }, error = function(e) { # Fails gracefully and alert the user if password is incorrect
+      showNotification(paste("PDF unlock failed. Wrong password?"), type = "error")
+      unlocked_pdf(NULL)
+    })
+    
+    # Check if the output file was created
+    if (file.exists(unlocked_file_path)) {
+      showNotification(paste("PDF unlocked successfully!"), type = "message")
+      unlocked_pdf(unlocked_file_path)
+    } 
+  })
+  
+  # Download UI for unlocked PDF
+  output$download_unlocked_ui <- renderUI({
+    shiny::req(unlocked_pdf())
+    downloadButton("download_unlocked", "Download Unlocked PDF")
+  })
+  
+  output$download_unlocked <- downloadHandler(
+    filename = function() paste0("unlocked_pdf_", Sys.Date(), ".pdf"),
+    content = function(file) file.copy(unlocked_pdf(), file)
+  )
+  
 } # end of server
 
 shinyApp(ui = ui, server = server)
