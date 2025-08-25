@@ -10,6 +10,7 @@ Features include:
 - Rotate pages  
 - Built-in PDF viewer / editor to verify changes  
 - Remove password-protection  
+- Lossless PDF compression  
 - Experimental feature of PDF conversion into Word, Excel, PowerPoint, or .png images  
 
 ## Pre-requisites

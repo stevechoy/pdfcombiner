@@ -2,7 +2,7 @@
 
 max_file_size    <- 500 # max file size in MB, change if needed
 bootstrap_theme  <- TRUE # When TRUE, uses bslib bootstrap theme to allow minimizing sidebar
-sidebar_width    <- 750 # Only applicable when bootstrap theme is used, in pixels
+sidebar_width    <- 650 # Only applicable when bootstrap theme is used, in pixels
 
 ### Setup ######################################################################
 
@@ -175,9 +175,29 @@ ui <- if (requireNamespace("bslib", quietly = TRUE) && bootstrap_theme) { # Load
            # Selector for choosing PDFs to combine
            selectInput("selected_pdfs", "Select PDFs to Combine (in order):", choices = NULL, multiple = TRUE),
            
-           # Combine PDF button directly below the selector
-           actionButton("combine_btn", "Update / Combine PDF", style = "margin-top: 0px;")
-      ),
+           # Combine button and compress checkbox
+           fluidRow(
+             column(
+               width = 8,  
+               actionButton("combine_btn", "Update / Combine PDF", style = "width: 100%; margin-top: 0px;")
+             ),
+             column(
+               width = 4,  
+               div(style = "height: 5px;"),  # Empty div to add space
+               checkboxInput("compress",
+                             tagList(
+                               HTML("&nbsp;Compress"),
+                               tags$span(
+                                 "?",
+                                 style = "color: blue; cursor: help; font-weight: bold; margin-left: 0px; font-size: 16px;",
+                                 title = "Performs lossless compression when downloaded. Note: Bookmarks will not be retained when files are compressed."
+                               )
+                             ),
+                             value = FALSE
+               ),
+             ) # end of column
+           ) # end of fluidRow for Combine button
+      ), # end of card
       
       card(card_header("Page Editor"),
            # Custom text with inline question mark tooltip
@@ -275,7 +295,7 @@ ui <- if (requireNamespace("bslib", quietly = TRUE) && bootstrap_theme) { # Load
            )
       ),
       
-      tags$p("Author: Steve Choy (v1.6)",
+      tags$p("Author: Steve Choy (v1.7)",
              a(href = "https://github.com/stevechoy/PDF_Combiner", "(GitHub Repo)", target = "_blank"),
              style = "font-size: 0.9em; color: #555; text-align: left;")
     ), # end of sidebar
@@ -309,8 +329,28 @@ ui <- if (requireNamespace("bslib", quietly = TRUE) && bootstrap_theme) { # Load
         # Selector for choosing PDFs to combine
         selectInput("selected_pdfs", "Select PDFs to Combine (in order):", choices = NULL, multiple = TRUE),
         
-        # Combine PDF button directly below the selector
-        actionButton("combine_btn", "Update / Combine PDF", style = "margin-top: 0px;"),
+        # Combine button and compress checkbox
+        fluidRow(
+          column(
+            width = 8,  # 75% width for the action button
+            actionButton("combine_btn", "Update / Combine PDF", style = "width: 100%; margin-top: 0px;")
+          ),
+          column(
+            width = 4,  # 25% width for the checkbox
+            div(style = "height: 5px;"),  # Empty div to add space
+            checkboxInput("compress",
+                          tagList(
+                            HTML("&nbsp;Compress"),
+                            tags$span(
+                              "?",
+                              style = "color: blue; cursor: help; font-weight: bold; margin-left: 0px; font-size: 16px;",
+                              title = "Performs lossless compression when downloaded. Note: Bookmarks will not be retained when files are compressed."
+                            )
+                          ),
+                          value = FALSE
+            ),
+          ) # end of column
+        ), # end of fluidRow for Combine button
         
         tags$hr(style = "border: 2px solid #ccc;"), # Grey divider line
         
@@ -407,7 +447,7 @@ ui <- if (requireNamespace("bslib", quietly = TRUE) && bootstrap_theme) { # Load
         ),
         
         br(),
-        tags$p("Author: Steve Choy (v1.6)",
+        tags$p("Author: Steve Choy (v1.7)",
                a(href = "https://github.com/stevechoy/PDF_Combiner", "(GitHub Repo)", target = "_blank"),
                style = "font-size: 0.9em; color: #555; text-align: left;")
       ), # end of sidebarPanel
@@ -624,7 +664,16 @@ server <- function(input, output, session) {
   
   output$download <- downloadHandler(
     filename = function() paste0("updated_pdf_", Sys.Date(), ".pdf"),
-    content = function(file) file.copy(combined_pdf(), file)
+    content = function(file) {
+      if(input$compress) {
+        compressed_path <- file.path(temp_dir, paste0("compressed_", format(Sys.time(), "%Y%m%d%H%M%S"), ".pdf"))
+        showNotification("Compressing PDF File...", type = "message")
+        pdf_compress(input = combined_pdf(), output = compressed_path, linearize = )
+        file.copy(compressed_path, file)
+      } else {
+        file.copy(combined_pdf(), file)
+      }
+    }
   )
   
   observeEvent(input$convert_btn, {
