@@ -497,7 +497,7 @@ server <- function(input, output, session) {
           // Calculate available height dynamically
           var windowHeight = window.innerHeight;
           var iframeTop = iframe.getBoundingClientRect().top;
-          var availableHeight = windowHeight - iframeTop - 20; // Add some padding (20px)
+          var availableHeight = windowHeight - iframeTop - 0; // Add some padding if required
           iframe.style.height = availableHeight + 'px';
         }
       }
