@@ -158,7 +158,7 @@ ui <- if (requireNamespace("bslib", quietly = TRUE) && bootstrap_theme) { # Load
                      font_scale = 1), 
     sidebar = sidebar(
       width = sidebar_width,
-      title = "PDF Combiner - Instructions",
+      title = tags$span("PDF Combiner", style = "font-size: 20px; font-weight: bold;"), # Title text styling
       p("1. Upload PDF file(s). All files will be combined automatically by default."),
       p("2. Use the file selector to choose which files to include, and click the 'Update / Combine PDF' button."),
       tags$div(
@@ -291,7 +291,8 @@ ui <- if (requireNamespace("bslib", quietly = TRUE) && bootstrap_theme) { # Load
     sidebarLayout(
       sidebarPanel(
         width = 5,
-        h4("PDF Combiner - Instructions"),
+        tags$span("PDF Combiner", style = "font-size: 20px; font-weight: bold;"), # Title text styling
+        br(),br(),
         p("1. Upload PDF file(s). All files will be combined automatically by default."),
         p("2. Use the file selector to choose which files to include, and click the 'Update / Combine PDF' button."),
         tags$div(
