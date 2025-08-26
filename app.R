@@ -198,7 +198,7 @@ ui <- if (requireNamespace("bslib", quietly = TRUE) && bootstrap_theme) { # Load
                                tags$span(
                                  "?",
                                  style = "color: blue; cursor: help; font-weight: bold; margin-left: 0px; font-size: 16px;",
-                                 title = "Performs lossless compression when saved. Percentage saved will be shown on the bottom right."
+                                 title = "Performs lossless compression when saved. Space saved will be shown on the bottom right."
                                )
                              ),
                              value = TRUE
@@ -357,7 +357,7 @@ ui <- if (requireNamespace("bslib", quietly = TRUE) && bootstrap_theme) { # Load
                             tags$span(
                               "?",
                               style = "color: blue; cursor: help; font-weight: bold; margin-left: 0px; font-size: 16px;",
-                              title = "Performs lossless compression when saved. Percentage saved will be shown on the bottom right."
+                              title = "Performs lossless compression when saved. Space saved will be shown on the bottom right."
                             )
                           ),
                           value = TRUE
