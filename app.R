@@ -147,6 +147,9 @@ parse_pages_to_remove <- function(input_string) {
   unique(pages[!is.na(pages)])
 }
 
+magick_formats <- c(".pdf", ".png", ".jpeg", ".jpg", ".bmp", ".gif", ".tiff",
+                    ".tif", ".webp", ".ico", ".heic", ".heif", ".svg", ".eps")
+
 ### Shiny App ##################################################################
 
 # UI
@@ -159,7 +162,7 @@ ui <- if (requireNamespace("bslib", quietly = TRUE) && bootstrap_theme) { # Load
     sidebar = sidebar(
       width = sidebar_width,
       title = tags$span("PDF Combiner", style = "font-size: 20px; font-weight: bold;"), # Title text styling
-      p("1. Upload PDF file(s). All files will be combined automatically by default."),
+      p("1. Upload PDF or Image file(s). All files will be combined automatically by default."),
       p("2. Use the file selector to choose which files to include, and click the 'Update / Combine PDF' button."),
       tags$div(
         tags$p("3. Use the page removal option to remove unwanted pages from the combined PDF:"),
@@ -170,10 +173,15 @@ ui <- if (requireNamespace("bslib", quietly = TRUE) && bootstrap_theme) { # Load
       ),
       
       card(card_header("Input Files"),
-           fileInput("pdf_files", paste0("Upload PDF File(s): [Max ", max_file_size, " MB]"), multiple = TRUE, accept = ".pdf"),  # Allow multiple file uploads
+           if (requireNamespace("magick", quietly = TRUE)) {
+             fileInput("pdf_files", paste0("Upload PDF or Image File(s): [Max ", max_file_size, " MB]"), multiple = TRUE,
+                       accept = magick_formats)
+           } else {
+             fileInput("pdf_files", paste0("Upload PDF File(s): [Max ", max_file_size, " MB]"), multiple = TRUE, accept = ".pdf")  # Allow multiple file uploads
+           },
            
            # Selector for choosing PDFs to combine
-           selectInput("selected_pdfs", "Select PDFs to Combine (in order):", choices = NULL, multiple = TRUE),
+           selectInput("selected_pdfs", "Select Files to Combine (in order):", choices = NULL, multiple = TRUE),
            
            # Combine button and compress checkbox
            fluidRow(
@@ -295,7 +303,7 @@ ui <- if (requireNamespace("bslib", quietly = TRUE) && bootstrap_theme) { # Load
            )
       ),
       
-      tags$p("Author: Steve Choy (v1.7)",
+      tags$p("Author: Steve Choy (v1.8)",
              a(href = "https://github.com/stevechoy/PDF_Combiner", "(GitHub Repo)", target = "_blank"),
              style = "font-size: 0.9em; color: #555; text-align: left;")
     ), # end of sidebar
@@ -313,7 +321,7 @@ ui <- if (requireNamespace("bslib", quietly = TRUE) && bootstrap_theme) { # Load
         width = 5,
         tags$span("PDF Combiner", style = "font-size: 20px; font-weight: bold;"), # Title text styling
         br(),br(),
-        p("1. Upload PDF file(s). All files will be combined automatically by default."),
+        p("1. Upload PDF or Image file(s). All files will be combined automatically by default."),
         p("2. Use the file selector to choose which files to include, and click the 'Update / Combine PDF' button."),
         tags$div(
           tags$p("3. Use the page removal option to remove unwanted pages from the combined PDF:"),
@@ -324,10 +332,15 @@ ui <- if (requireNamespace("bslib", quietly = TRUE) && bootstrap_theme) { # Load
         ),
         br(),
         
-        fileInput("pdf_files", paste0("Upload PDF File(s): [Max ", max_file_size, " MB]"), multiple = TRUE, accept = ".pdf"),  # Allow multiple file uploads
+        if (requireNamespace("magick", quietly = TRUE)) {
+          fileInput("pdf_files", paste0("Upload PDF or Image File(s): [Max ", max_file_size, " MB]"), multiple = TRUE,
+                    accept = magick_formats)
+        } else {
+          fileInput("pdf_files", paste0("Upload PDF File(s): [Max ", max_file_size, " MB]"), multiple = TRUE, accept = ".pdf")  # Allow multiple file uploads
+        },
         
         # Selector for choosing PDFs to combine
-        selectInput("selected_pdfs", "Select PDFs to Combine (in order):", choices = NULL, multiple = TRUE),
+        selectInput("selected_pdfs", "Select Files to Combine (in order):", choices = NULL, multiple = TRUE),
         
         # Combine button and compress checkbox
         fluidRow(
@@ -447,7 +460,7 @@ ui <- if (requireNamespace("bslib", quietly = TRUE) && bootstrap_theme) { # Load
         ),
         
         br(),
-        tags$p("Author: Steve Choy (v1.7)",
+        tags$p("Author: Steve Choy (v1.8)",
                a(href = "https://github.com/stevechoy/PDF_Combiner", "(GitHub Repo)", target = "_blank"),
                style = "font-size: 0.9em; color: #555; text-align: left;")
       ), # end of sidebarPanel
@@ -491,7 +504,28 @@ server <- function(input, output, session) {
     # Add the new PDFs to the list of uploaded PDFs
     current_pdfs <- uploaded_pdfs()
     for (i in seq_along(input$pdf_files$name)) {
-      current_pdfs[[input$pdf_files$name[i]]] <- input$pdf_files$datapath[i]
+      
+      # Extract the file name and extension
+      file_name <- input$pdf_files$name[i]
+      file_path <- input$pdf_files$datapath[i]
+      file_extension <- tools::file_ext(file_name)  # Get the file extension (e.g., "png", "pdf")
+      
+      if (requireNamespace("magick", quietly = TRUE)) {
+        # Check if the file extension is in magick_formats
+        if (paste0(".", file_extension) %in% magick_formats) {
+          if (file_extension == "pdf") { # If PDF, store the file as is
+            current_pdfs[[file_name]] <- file_path
+          } else {
+            img <- magick::image_read(file_path)  # Read the image
+            new_path <- file.path(temp_dir, paste0("converted_image_", i, "_", format(Sys.time(), "%Y%m%d%H%M%S"), ".pdf"))
+            magick::image_write(img, path = new_path, format = "pdf")  # Write the image as a PDF
+            current_pdfs[[file_name]] <- new_path
+            #file.remove(file_path) # Delete original image file
+          }
+        } 
+      } else {
+        current_pdfs[[file_name]] <- file_path
+      }
     }
     uploaded_pdfs(current_pdfs) # List of uploaded pdfs
     
