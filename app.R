@@ -198,10 +198,10 @@ ui <- if (requireNamespace("bslib", quietly = TRUE) && bootstrap_theme) { # Load
                                tags$span(
                                  "?",
                                  style = "color: blue; cursor: help; font-weight: bold; margin-left: 0px; font-size: 16px;",
-                                 title = "Performs lossless compression when downloaded. Note: Bookmarks will not be retained when files are compressed."
+                                 title = "Performs lossless compression when saved. Percentage saved will be shown on the bottom right."
                                )
                              ),
-                             value = FALSE
+                             value = TRUE
                ),
              ) # end of column
            ) # end of fluidRow for Combine button
@@ -357,10 +357,10 @@ ui <- if (requireNamespace("bslib", quietly = TRUE) && bootstrap_theme) { # Load
                             tags$span(
                               "?",
                               style = "color: blue; cursor: help; font-weight: bold; margin-left: 0px; font-size: 16px;",
-                              title = "Performs lossless compression when downloaded. Note: Bookmarks will not be retained when files are compressed."
+                              title = "Performs lossless compression when saved. Percentage saved will be shown on the bottom right."
                             )
                           ),
-                          value = FALSE
+                          value = TRUE
             ),
           ) # end of column
         ), # end of fluidRow for Combine button
@@ -505,7 +505,6 @@ server <- function(input, output, session) {
     current_pdfs <- uploaded_pdfs()
     for (i in seq_along(input$pdf_files$name)) {
       
-      # Extract the file name and extension
       file_name <- input$pdf_files$name[i]
       file_path <- input$pdf_files$datapath[i]
       file_extension <- tools::file_ext(file_name)  # Get the file extension (e.g., "png", "pdf")
@@ -514,7 +513,14 @@ server <- function(input, output, session) {
         # Check if the file extension is in magick_formats
         if (paste0(".", file_extension) %in% magick_formats) {
           if (file_extension == "pdf") { # If PDF, store the file as is
-            current_pdfs[[file_name]] <- file_path
+            # Check if the file is encrypted
+            pdf_is_locked <- (pdf_info(file_path)$locked | pdf_info(file_path)$encrypted)
+            if (pdf_is_locked) {
+              showNotification(paste0(file_name, " could not be read. It may not be a valid PDF, or it is password-protected. If so, please first unlock it down below."), type = "error", duration = 12)
+              return()
+            } else {
+              current_pdfs[[file_name]] <- file_path
+            }
           } else {
             img <- magick::image_read(file_path)  # Read the image
             new_path <- file.path(temp_dir, paste0("converted_image_", i, "_", format(Sys.time(), "%Y%m%d%H%M%S"), ".pdf"))
@@ -524,7 +530,14 @@ server <- function(input, output, session) {
           }
         } 
       } else {
-        current_pdfs[[file_name]] <- file_path
+        # Get PDF metadata
+        pdf_is_locked <- (pdf_info(file_path)$locked | pdf_info(file_path)$encrypted)
+        if(pdf_is_locked) {
+          showNotification(paste0(file_name, " could not be read. It may not be a valid PDF, or it is password-protected. If so, please first unlock it down below."), type = "error", duration = 12)
+          return()
+        } else {
+          current_pdfs[[file_name]] <- file_path
+        }
       }
     }
     uploaded_pdfs(current_pdfs) # List of uploaded pdfs
@@ -702,7 +715,19 @@ server <- function(input, output, session) {
       if(input$compress) {
         compressed_path <- file.path(temp_dir, paste0("compressed_", format(Sys.time(), "%Y%m%d%H%M%S"), ".pdf"))
         showNotification("Compressing PDF File...", type = "message")
-        pdf_compress(input = combined_pdf(), output = compressed_path, linearize = )
+        pdf_compress(input = combined_pdf(), output = compressed_path, linearize = FALSE)
+        # Compare file sizes
+        original_size <- file.info(combined_pdf())$size / 1024 # Convert bytes to KB
+        compressed_size <- file.info(compressed_path)$size / 1024 # Convert bytes to KB
+        space_saved <- original_size - compressed_size
+        percentage_saved <- space_saved / original_size * 100
+        cat("Original size:", original_size, "KB\n")
+        cat("Compressed size:", compressed_size, "KB\n")
+        cat("Space saved:", space_saved, "KB\n")
+        cat("Percentage saved:", round(percentage_saved, 2), "%\n")
+        showNotification(paste0("Original size: ", round(original_size), " KB, ",
+                                "Compressed size: ", round(compressed_size), " KB (",
+                                round(percentage_saved, 2), "% reduction)"), type = "message", duration = 15)
         file.copy(compressed_path, file)
       } else {
         file.copy(combined_pdf(), file)
