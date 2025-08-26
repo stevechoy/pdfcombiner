@@ -9,10 +9,10 @@ Features include:
 - Select PDFs to be combined and change the order of files  
 - Remove pages by either using commas (1,2,3), hyphens (5-10), or a combination of both (1,2,3,5-10)  
 - Rotate pages  
-- Watermark stamp  
+- Watermark stamp with custom text
 - Built-in PDF viewer / editor to verify changes  
 - Remove password-protection  
-- Lossless PDF compression  
+- Smart lossless PDF compression (i.e. always return the smallest file regardless of compression)
 - Experimental feature of PDF conversion into Word, Excel, PowerPoint, or .png images  
 
 ## Pre-requisites

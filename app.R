@@ -253,7 +253,7 @@ ui <- if (requireNamespace("bslib", quietly = TRUE) && bootstrap_theme) { # Load
                                tags$span(
                                  "?",
                                  style = "color: blue; cursor: help; font-weight: bold; margin-left: 0px; font-size: 16px;",
-                                 title = "Performs lossless compression when saved. Space saved will be shown on the bottom right."
+                                 title = "Smart lossless compression, will always return the smallest file (details will be shown on bottom right)."
                                )
                              ),
                              value = TRUE
@@ -374,7 +374,7 @@ ui <- if (requireNamespace("bslib", quietly = TRUE) && bootstrap_theme) { # Load
            )
       ),
       
-      tags$p("Author: Steve Choy (v1.9.1)",
+      tags$p("Author: Steve Choy (v1.9.2)",
              a(href = "https://github.com/stevechoy/PDF_Combiner", "(GitHub Repo)", target = "_blank"),
              style = "font-size: 0.9em; color: #555; text-align: left;")
     ), # end of sidebar
@@ -429,7 +429,7 @@ ui <- if (requireNamespace("bslib", quietly = TRUE) && bootstrap_theme) { # Load
                             tags$span(
                               "?",
                               style = "color: blue; cursor: help; font-weight: bold; margin-left: 0px; font-size: 16px;",
-                              title = "Performs lossless compression when saved. Space saved will be shown on the bottom right."
+                              title = "Smart lossless compression, will always return the smallest file (details will be shown on bottom right)."
                             )
                           ),
                           value = TRUE
@@ -549,7 +549,7 @@ ui <- if (requireNamespace("bslib", quietly = TRUE) && bootstrap_theme) { # Load
         ),
         
         br(),
-        tags$p("Author: Steve Choy (v1.9.1)",
+        tags$p("Author: Steve Choy (v1.9.2)",
                a(href = "https://github.com/stevechoy/PDF_Combiner", "(GitHub Repo)", target = "_blank"),
                style = "font-size: 0.9em; color: #555; text-align: left;")
       ), # end of sidebarPanel
@@ -819,7 +819,7 @@ server <- function(input, output, session) {
                                        watermark_fontsize = watermark_fontsize,
                                        watermark_col      = watermark_col,
                                        watermark_alpha    = watermark_alpha)
-        showNotification("Watermark applied!", type = "message")
+        showNotification(paste0("Watermark (", input$watermark_text, ") applied!"), type = "message")
       }
       
       if(input$compress) {
@@ -838,7 +838,13 @@ server <- function(input, output, session) {
         showNotification(paste0("Original size: ", round(original_size), " KB, ",
                                 "Compressed size: ", round(compressed_size), " KB (",
                                 round(percentage_saved, 2), "% reduction)"), type = "message", duration = 15)
-        file.copy(compressed_path, file)
+        if(space_saved > 0) {
+          file.copy(compressed_path, file)
+        } else {
+          showNotification(paste0("Compression resulted in a larger file. Saving uncompressed version instead..."), type = "warning", duration = 10)
+          file.copy(pdf_to_save, file)
+        }
+        
       } else {
         file.copy(pdf_to_save, file)
       }
