@@ -1,8 +1,11 @@
 ### PDF Combiner - Options #####################################################
 
-max_file_size    <- 500 # max file size in MB, change if needed
-bootstrap_theme  <- TRUE # When TRUE, uses bslib bootstrap theme to allow minimizing sidebar
-sidebar_width    <- 650 # Only applicable when bootstrap theme is used, in pixels
+max_file_size      <- 500      # max file size in MB, change if needed
+bootstrap_theme    <- TRUE     # When TRUE, uses bslib bootstrap theme to allow minimizing sidebar
+sidebar_width      <- 650      # Only applicable when bootstrap theme is used, in pixels
+watermark_fontsize <- 50       # Watermark font size
+watermark_col      <- "gray80" # Watermark color
+watermark_alpha    <- 0.6      # Watermark alpha
 
 ### Setup ######################################################################
 
@@ -168,6 +171,37 @@ sanitize_filename <- function(filename) {
   return(filename)
 }
 
+watermark_stamp <- function(input_pdf,
+                            output_pdf,
+                            watermark_text,
+                            watermark_fontsize = 50,
+                            watermark_col = "gray80",
+                            watermark_alpha = 0.6) {
+  
+  # Create a temporary PDF with the watermark text
+  temp_watermark_pdf <- tempfile(fileext = ".pdf")
+  pdf(temp_watermark_pdf, width = 8.5, height = 11)  # Standard US Letter size, i.e. approximately 216 mm by 279 mm, is different than A4 at 210 mm by 297 mm
+  grid::grid.text(
+    label = watermark_text,
+    x = 0.5, y = 0.5, gp = grid::gpar(fontsize = watermark_fontsize, col = watermark_col, alpha = watermark_alpha, fontface = "bold"),
+    rot = 45  # Rotate the watermark text
+  )
+  dev.off()
+  
+  # Overlay the watermark PDF onto the input PDF (preserves bookmarks)
+  qpdf::pdf_overlay_stamp(
+    input = input_pdf,
+    stamp = temp_watermark_pdf,
+    output = output_pdf
+  )
+  
+  # Clean up the temporary watermark PDF
+  unlink(temp_watermark_pdf)
+  
+  # Return the path to the output PDF
+  return(output_pdf)
+}
+
 ### Shiny App ##################################################################
 
 # UI
@@ -279,7 +313,24 @@ ui <- if (requireNamespace("bslib", quietly = TRUE) && bootstrap_theme) { # Load
                           label = tagList(icon("rotate-left", class = "fa-lg"), "Rotate Pages (90\u00B0 counterclockwise)")),  # Remove Pages button with xmark icon
              actionButton("reset_btn_rot", 
                           label = tagList(icon("sync-alt", class = "fa-lg"), "Reset"))#,  # Reset button with refresh icon
-           )
+           ),
+           
+           # Insert Watermark with inline question mark tooltip
+           tags$div(
+             style = "display: flex; align-items: center;",  # Align label and input inline
+             tags$label(
+               "(Optional) Watermark Stamp: ",
+               tags$span(
+                 "?",
+                 style = "color: blue; cursor: help; font-weight: bold; margin-left: 5px; font-size: 20px;",
+                 title = "Applies a grey see-through text across all pages of the PDF when downloaded."
+               )
+             )
+           ),
+           
+           # Watermark input
+           textInput("watermark_text", label = NULL, value = "", placeholder = "e.g. 'For Internal Use Only'")
+           
       ), # end of card
       
       card(card_header("Remove Password Protection"),
@@ -331,7 +382,7 @@ ui <- if (requireNamespace("bslib", quietly = TRUE) && bootstrap_theme) { # Load
     htmlOutput("pdfviewer")  # Embedded PDF viewer
   ) # end of page_sidebar
   
-} else {
+} else { # if not using Bootstrap theme, then use regular sidebar
   fluidPage(
     theme = app_theme,
     tags$head(tags$title("PDF Combiner")),
@@ -441,6 +492,22 @@ ui <- if (requireNamespace("bslib", quietly = TRUE) && bootstrap_theme) { # Load
           actionButton("reset_btn_rot", 
                        label = tagList(icon("sync-alt", class = "fa-lg"), "Reset"))#,  # Reset button with refresh icon
         ),
+        
+        # Insert Watermark with inline question mark tooltip
+        tags$div(
+          style = "display: flex; align-items: center;",  # Align label and input inline
+          tags$label(
+            "(Optional) Watermark Stamp: ",
+            tags$span(
+              "?",
+              style = "color: blue; cursor: help; font-weight: bold; margin-left: 5px; font-size: 20px;",
+              title = "Applies a grey see-through text across all pages of the PDF when downloaded."
+            )
+          )
+        ),
+        
+        # Watermark input
+        textInput("watermark_text", label = NULL, value = "", placeholder = "e.g. 'For Internal Use Only'"),
         
         tags$hr(style = "border: 2px solid #ccc;"), # Grey divider line
 
@@ -743,12 +810,24 @@ server <- function(input, output, session) {
     },
     
     content = function(file) {
+      if(input$watermark_text == "" | is.null(input$watermark_text)) {
+        pdf_to_save <- combined_pdf()
+      } else {
+        pdf_to_save <- watermark_stamp(input_pdf          = combined_pdf(),
+                                       output_pdf         = file.path(temp_dir, paste0("stamped_", format(Sys.time(), "%Y%m%d%H%M%S"), ".pdf")),
+                                       watermark_text     = input$watermark_text,
+                                       watermark_fontsize = watermark_fontsize,
+                                       watermark_col      = watermark_col,
+                                       watermark_alpha    = watermark_alpha)
+        showNotification("Watermark applied!", type = "message")
+      }
+      
       if(input$compress) {
         compressed_path <- file.path(temp_dir, paste0("compressed_", format(Sys.time(), "%Y%m%d%H%M%S"), ".pdf"))
         showNotification("Compressing PDF File...", type = "message")
-        pdf_compress(input = combined_pdf(), output = compressed_path, linearize = FALSE)
+        pdf_compress(input = pdf_to_save, output = compressed_path, linearize = FALSE)
         # Compare file sizes
-        original_size <- file.info(combined_pdf())$size / 1024 # Convert bytes to KB
+        original_size <- file.info(pdf_to_save)$size / 1024 # Convert bytes to KB
         compressed_size <- file.info(compressed_path)$size / 1024 # Convert bytes to KB
         space_saved <- original_size - compressed_size
         percentage_saved <- space_saved / original_size * 100
@@ -761,7 +840,7 @@ server <- function(input, output, session) {
                                 round(percentage_saved, 2), "% reduction)"), type = "message", duration = 15)
         file.copy(compressed_path, file)
       } else {
-        file.copy(combined_pdf(), file)
+        file.copy(pdf_to_save, file)
       }
     }
   )

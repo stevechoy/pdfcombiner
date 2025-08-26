@@ -9,6 +9,7 @@ Features include:
 - Select PDFs to be combined and change the order of files  
 - Remove pages by either using commas (1,2,3), hyphens (5-10), or a combination of both (1,2,3,5-10)  
 - Rotate pages  
+- Watermark stamp  
 - Built-in PDF viewer / editor to verify changes  
 - Remove password-protection  
 - Lossless PDF compression  
