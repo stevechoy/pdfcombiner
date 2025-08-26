@@ -1,7 +1,7 @@
 ### PDF Combiner - Options #####################################################
 
 max_file_size      <- 500      # max file size in MB, change if needed
-bootstrap_theme    <- FALSE     # When TRUE, uses bslib bootstrap theme to allow minimizing sidebar
+bootstrap_theme    <- TRUE     # When TRUE, uses bslib bootstrap theme to allow minimizing sidebar
 sidebar_width      <- 700      # Only applicable when bootstrap theme is used, in pixels
 watermark_fontsize <- 50       # Watermark font size
 watermark_col      <- "gray80" # Watermark color
