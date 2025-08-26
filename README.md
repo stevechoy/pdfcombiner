@@ -42,7 +42,7 @@ Simply save the <a href="https://github.com/stevechoy/PDF_Combiner/blob/main/app
 Alternatively, you may launch the App *directly* from R console (assuming you have the required packages listed above):
 
 ``` r
-shiny::runGitHub("PDF_Combiner", username = "stevechoy", launch.browser = TRUE)
+shiny::runGitHub("stevechoy/PDF_Combiner", launch.browser = TRUE)
 ```
 Instructions are included on the left hand side of the page.
 
