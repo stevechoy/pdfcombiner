@@ -2,7 +2,7 @@
 
 max_file_size      <- 500      # max file size in MB, change if needed
 bootstrap_theme    <- TRUE     # When TRUE, uses bslib bootstrap theme to allow minimizing sidebar
-sidebar_width      <- 650      # Only applicable when bootstrap theme is used, in pixels
+sidebar_width      <- 700      # Only applicable when bootstrap theme is used, in pixels
 watermark_fontsize <- 50       # Watermark font size
 watermark_col      <- "gray80" # Watermark color
 watermark_alpha    <- 0.6      # Watermark alpha
@@ -235,14 +235,20 @@ ui <- if (requireNamespace("bslib", quietly = TRUE) && bootstrap_theme) { # Load
            # Selector for choosing PDFs to combine
            selectInput("selected_pdfs", "Select Files to Combine (in this order - select / delete files below):", choices = NULL, multiple = TRUE),
            
+           textInput("save_as_name", label = "(Optional) File Name to Save as...", value = "", placeholder = "Default if not provided: 'updated_pdf_YYYY-MM-DD.pdf'"),
+           
            # Combine button and compress checkbox
            fluidRow(
              column(
-               width = 8,  
+               width = 4,  
                actionButton("combine_btn", "Update / Combine PDF", style = "width: 100%; margin-top: 0px;")
              ),
              column(
-               width = 4,  
+               width = 5,
+               uiOutput("download_ui")
+             ),
+             column(
+               width = 3,  
                div(style = "height: 5px;"),  # Empty div to add space
                checkboxInput("compress",
                              tagList(
@@ -254,11 +260,9 @@ ui <- if (requireNamespace("bslib", quietly = TRUE) && bootstrap_theme) { # Load
                                )
                              ),
                              value = TRUE
-               ),
+               )
              ) # end of column
-           ), # end of fluidRow for Combine button
-           
-           textInput("save_as_name", label = "(Optional) File Name to Save as...", value = "", placeholder = "Default if not provided: 'updated_pdf_YYYY-MM-DD.pdf'")
+           ) # end of fluidRow for Combine button
       ), # end of card
       
       card(card_header("Page Editor"),
@@ -284,8 +288,7 @@ ui <- if (requireNamespace("bslib", quietly = TRUE) && bootstrap_theme) { # Load
              actionButton("remove_pages_btn",
                           label = tagList(icon("xmark", class = "fa-lg"), "Remove Pages")),  # Remove Pages button with xmark icon
              actionButton("reset_btn", 
-                          label = tagList(icon("sync-alt", class = "fa-lg"), "Reset")),  # Reset button with refresh icon
-             uiOutput("download_ui")
+                          label = tagList(icon("sync-alt", class = "fa-lg"), "Reset"))  # Reset button with refresh icon
            ),
            
            #tags$hr(style = "border: 2px solid #ccc;"), # Grey divider line
@@ -413,14 +416,20 @@ ui <- if (requireNamespace("bslib", quietly = TRUE) && bootstrap_theme) { # Load
         # Selector for choosing PDFs to combine
         selectInput("selected_pdfs", "Select Files to Combine (in this order - select / delete files below):", choices = NULL, multiple = TRUE),
         
+        textInput("save_as_name", label = "(Optional) File Name to Save as...", value = "", placeholder = "Default if not provided: 'updated_pdf_YYYY-MM-DD.pdf'"),
+        
         # Combine button and compress checkbox
         fluidRow(
           column(
-            width = 8,  # 75% width for the action button
+            width = 4,  
             actionButton("combine_btn", "Update / Combine PDF", style = "width: 100%; margin-top: 0px;")
           ),
           column(
-            width = 4,  # 25% width for the checkbox
+            width = 5,
+            uiOutput("download_ui")
+          ),
+          column(
+            width = 3,  
             div(style = "height: 5px;"),  # Empty div to add space
             checkboxInput("compress",
                           tagList(
@@ -432,11 +441,9 @@ ui <- if (requireNamespace("bslib", quietly = TRUE) && bootstrap_theme) { # Load
                             )
                           ),
                           value = TRUE
-            ),
+            )
           ) # end of column
         ), # end of fluidRow for Combine button
-        
-        textInput("save_as_name", label = "(Optional) File Name to Save as...", value = "", placeholder = "Default if not provided: 'updated_pdf_YYYY-MM-DD.pdf'"),
         
         tags$hr(style = "border: 2px solid #ccc;"), # Grey divider line
         
@@ -462,8 +469,7 @@ ui <- if (requireNamespace("bslib", quietly = TRUE) && bootstrap_theme) { # Load
           actionButton("remove_pages_btn",
                        label = tagList(icon("xmark", class = "fa-lg"), "Remove Pages")),  # Remove Pages button with xmark icon
           actionButton("reset_btn", 
-                       label = tagList(icon("sync-alt", class = "fa-lg"), "Reset")),  # Reset button with refresh icon
-          uiOutput("download_ui")
+                       label = tagList(icon("sync-alt", class = "fa-lg"), "Reset"))  # Reset button with refresh icon
         ),
         
         tags$hr(style = "border: 2px solid #ccc;"), # Grey divider line
@@ -492,6 +498,8 @@ ui <- if (requireNamespace("bslib", quietly = TRUE) && bootstrap_theme) { # Load
           actionButton("reset_btn_rot", 
                        label = tagList(icon("sync-alt", class = "fa-lg"), "Reset"))#,  # Reset button with refresh icon
         ),
+        
+        tags$hr(style = "border: 2px solid #ccc;"), # Grey divider line
         
         # Insert Watermark with inline question mark tooltip
         tags$div(
