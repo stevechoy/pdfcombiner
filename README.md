@@ -1,6 +1,7 @@
 # PDF Combiner
 
 PDF Combiner is a simple <a href="https://lagom.shinyapps.io/PDF_Combiner/" target="_blank">R Shiny App</a> that allows merging of pdf and/or image files with page removal and page rotation options.  
+
 It is a **fast, free, and secure alternative** to commercial software such as Adobe Acrobat and/or various online websites which require users to sign-up, and it avoids any potential risks associated with uploading files elsewhere.    
 
 Features include:  

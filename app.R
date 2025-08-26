@@ -734,7 +734,7 @@ server <- function(input, output, session) {
   output$download <- downloadHandler(
     # Dynamically set the file name
     filename = function() {
-      # Use the user-provided name, or default to "default.pdf" if empty
+      # Use the user-provided name, or default to "updated_pdf_YYYY-MM-DD.pdf" if empty
       if (input$save_as_name == "" | is.null(input$save_as_name)) {
         paste0("updated_pdf_", Sys.Date(), ".pdf")
       } else {
