@@ -27,6 +27,12 @@ install.packages(pdftools)
 # install.packages(openxlsx) # Optional, only used for PDF conversion to Excel
 ```
 
+### Installing Java
+
+The `{staplr}` package is **highly recommended** as it supports bookmarks, and you may need to also <a href="https://www.java.com/en/download/" target="_blank">install Java separately</a> if your system does not currently have it.  
+After installation, you are recommended to restart your R instance before proceeding.  
+
+
 ## Running the App
 
 Simply save the <a href="https://github.com/stevechoy/PDF_Combiner/blob/main/app.R" target="_blank">app.R</a> file locally and run the App in R.  

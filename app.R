@@ -181,7 +181,7 @@ ui <- if (requireNamespace("bslib", quietly = TRUE) && bootstrap_theme) { # Load
            },
            
            # Selector for choosing PDFs to combine
-           selectInput("selected_pdfs", "Select Files to Combine (in order):", choices = NULL, multiple = TRUE),
+           selectInput("selected_pdfs", "Select Files to Combine (in this order - select / delete files below):", choices = NULL, multiple = TRUE),
            
            # Combine button and compress checkbox
            fluidRow(
@@ -204,7 +204,9 @@ ui <- if (requireNamespace("bslib", quietly = TRUE) && bootstrap_theme) { # Load
                              value = TRUE
                ),
              ) # end of column
-           ) # end of fluidRow for Combine button
+           ), # end of fluidRow for Combine button
+           
+           textInput("save_as_name", label = "(Optional) File Name to Save as...", value = "", placeholder = "Default if not provided: 'updated_pdf_YYYY-MM-DD.pdf'")
       ), # end of card
       
       card(card_header("Page Editor"),
@@ -340,7 +342,7 @@ ui <- if (requireNamespace("bslib", quietly = TRUE) && bootstrap_theme) { # Load
         },
         
         # Selector for choosing PDFs to combine
-        selectInput("selected_pdfs", "Select Files to Combine (in order):", choices = NULL, multiple = TRUE),
+        selectInput("selected_pdfs", "Select Files to Combine (in this order - select / delete files below):", choices = NULL, multiple = TRUE),
         
         # Combine button and compress checkbox
         fluidRow(
@@ -364,6 +366,8 @@ ui <- if (requireNamespace("bslib", quietly = TRUE) && bootstrap_theme) { # Load
             ),
           ) # end of column
         ), # end of fluidRow for Combine button
+        
+        textInput("save_as_name", label = "(Optional) File Name to Save as...", value = "", placeholder = "Default if not provided: 'updated_pdf_YYYY-MM-DD.pdf'"),
         
         tags$hr(style = "border: 2px solid #ccc;"), # Grey divider line
         
@@ -710,7 +714,16 @@ server <- function(input, output, session) {
   })
   
   output$download <- downloadHandler(
-    filename = function() paste0("updated_pdf_", Sys.Date(), ".pdf"),
+    # Dynamically set the file name
+    filename = function() {
+      # Use the user-provided name, or default to "default.pdf" if empty
+      if (input$save_as_name == "" | is.null(input$save_as_name)) {
+        paste0("updated_pdf_", Sys.Date(), ".pdf")
+      } else {
+        paste0(input$save_as_name, ".pdf")  # Append ".pdf" to the user-provided name
+      }
+    },
+    
     content = function(file) {
       if(input$compress) {
         compressed_path <- file.path(temp_dir, paste0("compressed_", format(Sys.time(), "%Y%m%d%H%M%S"), ".pdf"))
@@ -822,7 +835,7 @@ server <- function(input, output, session) {
   })
   
   output$download_unlocked <- downloadHandler(
-    filename = function() paste0("unlocked_pdf_", Sys.Date(), ".pdf"),
+    filename = function() paste0(sub("\\.pdf$", "", input$locked_pdf$name), "_unlocked.pdf"),
     content = function(file) file.copy(unlocked_pdf(), file)
   )
   
