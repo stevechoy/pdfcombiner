@@ -163,7 +163,7 @@ ui <- if (requireNamespace("bslib", quietly = TRUE) && bootstrap_theme) { # Load
       width = sidebar_width,
       title = tags$span("PDF Combiner", style = "font-size: 20px; font-weight: bold;"), # Title text styling
       p("1. Upload PDF or Image file(s). All files will be combined automatically by default."),
-      p("2. Use the file selector to choose which files to include, and click the 'Update / Combine PDF' button."),
+      p("2. Use the file selector to choose which files to include, and click the 'Update / Combine PDF' button (delete unwanted files, order matters)."),
       tags$div(
         tags$p("3. Use the page removal option to remove unwanted pages from the combined PDF:"),
         tags$p("- Enter page numbers separated by commas (e.g., `1,2,3`).", style = "text-indent: 20px;"),
@@ -324,7 +324,7 @@ ui <- if (requireNamespace("bslib", quietly = TRUE) && bootstrap_theme) { # Load
         tags$span("PDF Combiner", style = "font-size: 20px; font-weight: bold;"), # Title text styling
         br(),br(),
         p("1. Upload PDF or Image file(s). All files will be combined automatically by default."),
-        p("2. Use the file selector to choose which files to include, and click the 'Update / Combine PDF' button."),
+        p("2. Use the file selector to choose which files to include, and click the 'Update / Combine PDF' button (delete unwanted files, order matters)."),
         tags$div(
           tags$p("3. Use the page removal option to remove unwanted pages from the combined PDF:"),
           tags$p("- Enter page numbers separated by commas (e.g., `1,2,3`).", style = "text-indent: 20px;"),
