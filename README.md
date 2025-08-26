@@ -44,7 +44,8 @@ Instructions are included on the left hand side of the page.
 
 - By default the modern Bootstrap UI theme is used (`{bslib}` package), which allows minimizing of the sidebar. You can turn off this option by setting `bootstrap_theme <- FALSE` in the app.R file.  
 - To retain bookmarks after combining PDFs, you need to install the `{staplr}` <a href="https://github.com/pridiltal/staplr/" target="_blank">package</a>. Importantly, bookmarks *cannot* be retained when any pages are removed or rotated (or when passwords are removed).  
-- If you want to install a free graphical tool, you can also check out <a href="https://www.pdflabs.com/tools/pdftk-the-pdf-toolkit/" target="_blank">PDFtk</a> (Windows only), which is the back-end for the `{staplr}` package.  
+- If you want to install a free graphical tool, you can check out <a href="https://www.pdflabs.com/tools/pdftk-the-pdf-toolkit/" target="_blank">PDFtk</a> (Windows only), which is the back-end for the `{staplr}` package.  
+  - I've also heard a lot of good things about <a href="https://www.pdfgear.com/" target="_blank">PDFgear</a> (Windows and Mac), although I've not used it myself.
 - All PDF files are stored locally in a per-session temporary directory, given by the `tempdir()` function.  
 
 ## Known Issues
