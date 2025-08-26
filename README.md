@@ -29,7 +29,7 @@ install.packages(pdftools)
 
 ### Installing Java
 
-The `{staplr}` package is **highly recommended** as it supports bookmarks, and it uses Java so you may need to <a href="https://www.java.com/en/download/" target="_blank">install Java separately</a> if your system does not currently have it. Choose the 64-bit version if your R installation is also 64-bit.  
+The `{staplr}` package is **highly recommended** as it supports bookmarks, however it uses Java so you may need to <a href="https://www.java.com/en/download/" target="_blank">install Java separately</a> if your system does not currently have it. Choose the 64-bit version if your R installation is also 64-bit.  
 
 After installation, you are recommended to restart your R instance before proceeding.  
 

@@ -150,6 +150,24 @@ parse_pages_to_remove <- function(input_string) {
 magick_formats <- c(".pdf", ".png", ".jpeg", ".jpg", ".bmp", ".gif", ".tiff",
                     ".tif", ".webp", ".ico", ".heic", ".heif", ".svg", ".eps")
 
+sanitize_filename <- function(filename) {
+  # Define illegal characters
+  illegal_chars <- "[\\\\/:*?\"<>|]"
+  
+  # Check if the filename contains illegal characters
+  if (grepl(illegal_chars, filename)) {
+    # Remove illegal characters from the filename
+    sanitized_filename <- gsub(illegal_chars, "_", filename)
+    # Notify the user about illegal characters
+    shiny::showNotification(paste0("Illegal characters are replaced with underscores (new filename: ", sanitized_filename, ".pdf)."),
+                            type = "warning", duration = 12)
+    return(sanitized_filename)
+  }
+  
+  # If no illegal characters, return the original filename
+  return(filename)
+}
+
 ### Shiny App ##################################################################
 
 # UI
@@ -305,7 +323,7 @@ ui <- if (requireNamespace("bslib", quietly = TRUE) && bootstrap_theme) { # Load
            )
       ),
       
-      tags$p("Author: Steve Choy (v1.8)",
+      tags$p("Author: Steve Choy (v1.8.1)",
              a(href = "https://github.com/stevechoy/PDF_Combiner", "(GitHub Repo)", target = "_blank"),
              style = "font-size: 0.9em; color: #555; text-align: left;")
     ), # end of sidebar
@@ -464,7 +482,7 @@ ui <- if (requireNamespace("bslib", quietly = TRUE) && bootstrap_theme) { # Load
         ),
         
         br(),
-        tags$p("Author: Steve Choy (v1.8)",
+        tags$p("Author: Steve Choy (v1.8.1)",
                a(href = "https://github.com/stevechoy/PDF_Combiner", "(GitHub Repo)", target = "_blank"),
                style = "font-size: 0.9em; color: #555; text-align: left;")
       ), # end of sidebarPanel
@@ -720,7 +738,7 @@ server <- function(input, output, session) {
       if (input$save_as_name == "" | is.null(input$save_as_name)) {
         paste0("updated_pdf_", Sys.Date(), ".pdf")
       } else {
-        paste0(input$save_as_name, ".pdf")  # Append ".pdf" to the user-provided name
+        paste0(sanitize_filename(input$save_as_name), ".pdf")  # Append ".pdf" to the user-provided name
       }
     },
     
