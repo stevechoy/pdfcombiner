@@ -29,7 +29,8 @@ install.packages(pdftools)
 
 ### Installing Java
 
-The `{staplr}` package is **highly recommended** as it supports bookmarks, and you may need to also <a href="https://www.java.com/en/download/" target="_blank">install Java separately</a> if your system does not currently have it.  
+The `{staplr}` package is **highly recommended** as it supports bookmarks, and it uses Java so you may need to <a href="https://www.java.com/en/download/" target="_blank">install Java separately</a> if your system does not currently have it.  
+
 After installation, you are recommended to restart your R instance before proceeding.  
 
 
