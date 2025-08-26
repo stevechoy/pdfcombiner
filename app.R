@@ -1,7 +1,7 @@
 ### PDF Combiner - Options #####################################################
 
 max_file_size      <- 500      # max file size in MB, change if needed
-bootstrap_theme    <- TRUE     # When TRUE, uses bslib bootstrap theme to allow minimizing sidebar
+bootstrap_theme    <- FALSE     # When TRUE, uses bslib bootstrap theme to allow minimizing sidebar
 sidebar_width      <- 700      # Only applicable when bootstrap theme is used, in pixels
 watermark_fontsize <- 50       # Watermark font size
 watermark_col      <- "gray80" # Watermark color
@@ -202,6 +202,8 @@ watermark_stamp <- function(input_pdf,
   return(output_pdf)
 }
 
+page_placeholder_text <- "Separate by commas (e.g. `1,2,3`), use hyphens for ranges (e.g. `5-10`), or do both."
+
 ### Shiny App ##################################################################
 
 # UI
@@ -216,13 +218,8 @@ ui <- if (requireNamespace("bslib", quietly = TRUE) && bootstrap_theme) { # Load
       title = tags$span("PDF Combiner", style = "font-size: 20px; font-weight: bold;"), # Title text styling
       p("1. Upload PDF or Image file(s). All files will be combined automatically by default."),
       p("2. Use the file selector to choose which files to include, and click the 'Update / Combine PDF' button (delete unwanted files, order matters)."),
-      tags$div(
-        tags$p("3. Use the page removal option to remove unwanted pages from the combined PDF:"),
-        tags$p("- Enter page numbers separated by commas (e.g., `1,2,3`).", style = "text-indent: 20px;"),
-        tags$p("- Use hyphens for ranges (e.g., `5-10`).", style = "text-indent: 20px;"),
-        tags$p("- Both options can be used together (e.g., `1,2,3,5-10`).", style = "text-indent: 20px;"),
-        tags$p("4. Verify changes on the right and download the updated PDF.")
-      ),
+      p("3. Verify changes on the right and download the updated PDF."),
+      p(HTML("<strong>Note:</strong> You can also apply any optional features below, <em>before</em> downloading the updated PDF.")),
       
       card(card_header("Input Files"),
            if (requireNamespace("magick", quietly = TRUE)) {
@@ -280,7 +277,7 @@ ui <- if (requireNamespace("bslib", quietly = TRUE) && bootstrap_theme) { # Load
            ),
            
            # Page removal input
-           textInput("remove_pages", label = NULL, value = "", placeholder = "e.g. '1, 2, 3, 5-10'"), # Input without default label
+           textInput("remove_pages", label = NULL, value = "", placeholder = page_placeholder_text), # Input without default label
            
            # Buttons side by side with 20px gap
            div(
@@ -307,7 +304,7 @@ ui <- if (requireNamespace("bslib", quietly = TRUE) && bootstrap_theme) { # Load
            ),
            
            # Page rotate input
-           textInput("rotate_pages", label = NULL, value = "", placeholder = "e.g. '1, 2, 3, 5-10'"),
+           textInput("rotate_pages", label = NULL, value = "", placeholder = page_placeholder_text),
            
            # Buttons side by side with 20px gap
            div(
@@ -377,7 +374,7 @@ ui <- if (requireNamespace("bslib", quietly = TRUE) && bootstrap_theme) { # Load
            )
       ),
       
-      tags$p("Author: Steve Choy (v1.9)",
+      tags$p("Author: Steve Choy (v1.9.1)",
              a(href = "https://github.com/stevechoy/PDF_Combiner", "(GitHub Repo)", target = "_blank"),
              style = "font-size: 0.9em; color: #555; text-align: left;")
     ), # end of sidebar
@@ -397,13 +394,8 @@ ui <- if (requireNamespace("bslib", quietly = TRUE) && bootstrap_theme) { # Load
         br(),br(),
         p("1. Upload PDF or Image file(s). All files will be combined automatically by default."),
         p("2. Use the file selector to choose which files to include, and click the 'Update / Combine PDF' button (delete unwanted files, order matters)."),
-        tags$div(
-          tags$p("3. Use the page removal option to remove unwanted pages from the combined PDF:"),
-          tags$p("- Enter page numbers separated by commas (e.g., `1,2,3`).", style = "text-indent: 20px;"),
-          tags$p("- Use hyphens for ranges (e.g., `5-10`).", style = "text-indent: 20px;"),
-          tags$p("- Both options can be used together (e.g., `1,2,3,5-10`).", style = "text-indent: 20px;"),
-          tags$p("4. Verify changes on the right and download the updated PDF.")
-        ),
+        p("3. Verify changes on the right and download the updated PDF."),
+        p(HTML("<strong>Note:</strong> You can also apply any optional features below, <em>before</em> downloading the updated PDF.")),
         br(),
         
         if (requireNamespace("magick", quietly = TRUE)) {
@@ -461,7 +453,7 @@ ui <- if (requireNamespace("bslib", quietly = TRUE) && bootstrap_theme) { # Load
         ),
         
         # Page removal input
-        textInput("remove_pages", label = NULL, value = "", placeholder = "e.g. '1, 2, 3, 5-10'"), # Input without default label
+        textInput("remove_pages", label = NULL, value = "", placeholder = page_placeholder_text), # Input without default label
         
         # Buttons side by side with 20px gap
         div(
@@ -488,7 +480,7 @@ ui <- if (requireNamespace("bslib", quietly = TRUE) && bootstrap_theme) { # Load
         ),
         
         # Page rotate input
-        textInput("rotate_pages", label = NULL, value = "", placeholder = "e.g. '1, 2, 3, 5-10'"),
+        textInput("rotate_pages", label = NULL, value = "", placeholder = page_placeholder_text),
         
         # Buttons side by side with 20px gap
         div(
@@ -557,7 +549,7 @@ ui <- if (requireNamespace("bslib", quietly = TRUE) && bootstrap_theme) { # Load
         ),
         
         br(),
-        tags$p("Author: Steve Choy (v1.9)",
+        tags$p("Author: Steve Choy (v1.9.1)",
                a(href = "https://github.com/stevechoy/PDF_Combiner", "(GitHub Repo)", target = "_blank"),
                style = "font-size: 0.9em; color: #555; text-align: left;")
       ), # end of sidebarPanel
