@@ -819,7 +819,7 @@ server <- function(input, output, session) {
     showNotification("Page reset successful! Restored to the current list of PDFs.", type = "message")
   })
   
-  # Reset Button
+  # Reset Button from page rotation section
   observeEvent(input$reset_btn_rot, {
     shiny::req(original_pdf())  # Ensure there is an original combined PDF
     combined_pdf(original_pdf())  # Restore the original combined PDF
@@ -925,7 +925,7 @@ server <- function(input, output, session) {
     
     content = function(file) {
       if(input$watermark_text == "" | is.null(input$watermark_text)) {
-        pdf_to_save <- combined_pdf()
+        pdf_to_save <- combined_pdf_nowm()
       } else {
         pdf_to_save <- watermark_stamp(input_pdf          = combined_pdf_nowm(), # using the no wm version for applying final wm
                                        output_pdf         = file.path(temp_dir, paste0("stamped_", format(Sys.time(), "%Y%m%d%H%M%S"), ".pdf")),
