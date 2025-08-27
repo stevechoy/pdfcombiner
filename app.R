@@ -222,6 +222,28 @@ watermark_stamp <- function(input_pdf,
 
 page_placeholder_text <- "Separate by commas (e.g. `1,2,3`), use hyphens for ranges (e.g. `5-10`), or do both."
 
+sum_disk_space <- function(file_list) {
+  # Initialize total size
+  total_size_kb <- 0
+  
+  # Iterate over the files in the list
+  for (file_name in names(file_list)) {
+    file_path <- file_list[[file_name]]
+    
+    # Check if the file exists
+    if (file.exists(file_path)) {
+      # Get the file size in bytes and convert to kilobytes
+      file_size_kb <- file.info(file_path)$size / 1024
+      total_size_kb <- total_size_kb + file_size_kb
+    } else {
+      warning(sprintf("File '%s' does not exist at path '%s'. Skipping.", file_name, file_path))
+    }
+  }
+  
+  # Return the total size in kilobytes
+  return(total_size_kb)
+}
+
 ### Shiny App ##################################################################
 
 # UI
@@ -400,7 +422,7 @@ ui <- if (requireNamespace("bslib", quietly = TRUE) && bootstrap_theme) { # Load
            )
       ),
       
-      tags$p("Author: Steve Choy (v1.9.3)",
+      tags$p("Author: Steve Choy (v1.9.4)",
              a(href = "https://github.com/stevechoy/PDF_Combiner", "(GitHub Repo)", target = "_blank"),
              style = "font-size: 0.9em; color: #555; text-align: left;")
     ), # end of sidebar
@@ -579,7 +601,7 @@ ui <- if (requireNamespace("bslib", quietly = TRUE) && bootstrap_theme) { # Load
         ),
         
         br(),
-        tags$p("Author: Steve Choy (v1.9.3)",
+        tags$p("Author: Steve Choy (v1.9.4)",
                a(href = "https://github.com/stevechoy/PDF_Combiner", "(GitHub Repo)", target = "_blank"),
                style = "font-size: 0.9em; color: #555; text-align: left;")
       ), # end of sidebarPanel
@@ -603,7 +625,8 @@ server <- function(input, output, session) {
   shiny::addResourcePath("pdfs", temp_dir)  # Serve files from the temp directory
   #rotation_angle <- reactiveVal(0)      # Reactive value to store the current rotation angle for staplr, not currently used
   unlocked_pdf <- reactiveVal(NULL)     # Stores unlocked PDF path (singular file)
-  combined_pdf_nowm <- reactiveVal(NULL) # Store combined_pdf without watermarks for final download
+  combined_pdf_nowm <- reactiveVal(NULL) # Stores combined_pdf without watermarks for final download
+  original_file_sizes <- reactiveVal(NULL) # Stores sum of original files disk spaces
   
   # Default watermark settings
   default_settings <- list(
@@ -623,6 +646,9 @@ server <- function(input, output, session) {
   
   # Helper function to combine PDFs
   combine_pdfs <- function(pdf_paths, output_path) {
+    original_file_sizes(sum_disk_space(pdf_paths))
+    print(paste("Sum of File Sizes (KB):", original_file_sizes())) # Debugging
+    # Interesting that when PDFs are read, they are already somehow compressed
     if(package_check("staplr", bookmarks = TRUE)) {
       staplr::staple_pdf(input_files = unlist(pdf_paths), output_filepath = output_path)
     } else {
@@ -961,7 +987,8 @@ server <- function(input, output, session) {
         showNotification("Compressing PDF File...", type = "message")
         pdf_compress(input = pdf_to_save, output = compressed_path, linearize = FALSE)
         # Compare file sizes
-        original_size <- file.info(pdf_to_save)$size / 1024 # Convert bytes to KB
+        #original_size <- file.info(pdf_to_save)$size / 1024 # Convert bytes to KB
+        original_size <- original_file_sizes()
         compressed_size <- file.info(compressed_path)$size / 1024 # Convert bytes to KB
         space_saved <- original_size - compressed_size
         percentage_saved <- space_saved / original_size * 100
