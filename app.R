@@ -8,6 +8,8 @@ defaultwm_col      <- "gray80" # Default Watermark color
 defaultwm_alpha    <- 0.6      # Default Watermark alpha
 defaultwm_rot      <- 45       # Default Watermark rotation angle
 defaultwm_fontface <- "bold"   # Default Watermark fontface ("plain", "italic", "bold", "bold.italic")
+defaultwm_height   <- 11       # Default Watermark height in inches (US letter size = 11,  A4 = 11.69)
+defaultwm_width    <- 8.5      # Default Watermark height in inches (US letter size = 8.5, A4 = 8.27)
 
 ### Setup ######################################################################
 
@@ -181,7 +183,9 @@ watermark_stamp <- function(input_pdf,
                             fallback_col  = "gray80",
                             watermark_alpha = 0.6,
                             watermark_rot   = 45,
-                            watermark_fontface = "bold") {
+                            watermark_fontface = "bold",
+                            watermark_height = 11,
+                            watermark_width  = 8.5) {
   
   # Validate the watermark color
   validate_color <- function(color) {
@@ -200,7 +204,7 @@ watermark_stamp <- function(input_pdf,
   
   # Create a temporary PDF with the watermark text
   temp_watermark_pdf <- tempfile(fileext = ".pdf")
-  pdf(temp_watermark_pdf, width = 8.5, height = 11)  # Standard US Letter size, i.e. approximately 216 mm by 279 mm, is different than A4 at 210 mm by 297 mm
+  pdf(temp_watermark_pdf, width = watermark_width, height = watermark_height)  # Standard US Letter size, i.e. approximately 216 mm by 279 mm, is different than A4 at 210 mm by 297 mm
   grid::grid.text(
     label = watermark_text,
     x = 0.5, y = 0.5, gp = grid::gpar(fontsize = watermark_fontsize, col = watermark_col, alpha = watermark_alpha, fontface = watermark_fontface),
@@ -636,7 +640,9 @@ server <- function(input, output, session) {
     col      = defaultwm_col,
     alpha    = defaultwm_alpha,
     rot      = defaultwm_rot,
-    fontface = defaultwm_fontface
+    fontface = defaultwm_fontface,
+    height   = defaultwm_height,
+    width    = defaultwm_width
   )
   
   # Reactive values to store watermark settings
@@ -645,7 +651,9 @@ server <- function(input, output, session) {
     col        = default_settings$col,
     alpha      = default_settings$alpha,
     rot        = default_settings$rot,
-    fontface   = default_settings$fontface
+    fontface   = default_settings$fontface,
+    height     = default_settings$height,
+    width      = default_settings$width
   )
   
   # Helper function to combine PDFs
@@ -876,21 +884,33 @@ server <- function(input, output, session) {
   
   # Show a modal dialog for customizing watermark settings
   observeEvent(input$customize_watermark, {
-    showModal(modalDialog(
-      title = "Customize Watermark Settings",
-      easyClose = TRUE, fade = TRUE,
-      textInput("col", HTML('Color (character or Hex) <a href="https://r-charts.com/colors/" target="_blank">[View Color List]</a>'), value = watermark_settings$col),
-      numericInput("fontsize", "Font Size", value = watermark_settings$fontsize, min = 1),
-      selectInput("fontface", "Font Face", choices = c("plain", "bold", "italic", "bold.italic"), selected = "bold", multiple = FALSE),
-      sliderInput("alpha", "Transparency (Alpha)", min = 0, max = 1, value = watermark_settings$alpha),
-      numericInput("rot", "Rotation Angle", value = watermark_settings$rot, min = 0, max = 360),
-      footer = tagList(
-        actionButton("reset_wm", "Reset", class = "btn-warning"),
-        actionButton("render_preview", "Render Preview", class = "btn-info"),
-        actionButton("apply", "Apply Settings", class = "btn-success"),
-        modalButton("OK")
+    showModal(
+      modalDialog(
+        title = "Customize Watermark Settings",
+        easyClose = TRUE, fade = TRUE,
+        fluidRow(
+          # First column
+          column(6,
+                 textInput("col", HTML('Font Color <a href="https://r-charts.com/colors/" target="_blank">(character or Hex)</a>'), value = watermark_settings$col),
+                 numericInput("fontsize", "Font Size", value = watermark_settings$fontsize, min = 1),
+                 selectInput("fontface", "Font Face", choices = c("plain", "bold", "italic", "bold.italic"), selected = "bold", multiple = FALSE),
+                 numericInput("rot", "Rotation Angle", value = watermark_settings$rot, min = 0, max = 360),
+          ),
+          # Second column
+          column(6,
+                 sliderInput("alpha", "Transparency (Alpha)", min = 0, max = 1, value = watermark_settings$alpha),
+                 numericInput("height", "Overlay Height (inches)", value = watermark_settings$height, min = 1),
+                 numericInput("width", "Overlay Width (inches)", value = watermark_settings$width, min = 1)
+          )
+        ),
+        footer = tagList(
+          actionButton("reset_wm", "Reset", class = "btn-warning"),
+          actionButton("render_preview", "Render Preview", class = "btn-info"),
+          actionButton("apply", "Apply Settings", class = "btn-success"),
+          modalButton("OK")
+        )
       )
-    ))
+    )
   })
   
   # Reset settings to default values
@@ -901,6 +921,8 @@ server <- function(input, output, session) {
     watermark_settings$alpha    <- default_settings$alpha
     watermark_settings$rot      <- default_settings$rot
     watermark_settings$fontface <- default_settings$fontface
+    watermark_settings$height   <- default_settings$height
+    watermark_settings$width    <- default_settings$width
     
     # Update the modal input fields
     updateNumericInput(session, "fontsize", value = default_settings$fontsize)
@@ -908,16 +930,20 @@ server <- function(input, output, session) {
     updateSliderInput(session, "alpha",     value = default_settings$alpha)
     updateNumericInput(session, "rot",      value = default_settings$rot)
     updateSelectInput(session, "fontface",  selected = default_settings$fontface)
+    updateNumericInput(session, "height",   value = default_settings$height)
+    updateNumericInput(session, "width",    value = default_settings$width)
   })
   
   # Apply new settings to update the watermark_settings reactive
-  observeEvent(c(input$apply, input$render_preview), {
+  observeEvent(input$apply, {
     # Update the reactive values
     watermark_settings$fontsize <- input$fontsize
     watermark_settings$col      <- input$col
     watermark_settings$alpha    <- input$alpha
     watermark_settings$rot      <- input$rot
     watermark_settings$fontface <- input$fontface
+    watermark_settings$height   <- input$height
+    watermark_settings$width    <- input$width
     
     # Update the modal input fields
     updateNumericInput(session, "fontsize", value = input$fontsize)
@@ -925,6 +951,8 @@ server <- function(input, output, session) {
     updateSliderInput(session, "alpha",     value = input$alpha)
     updateNumericInput(session, "rot",      value = input$rot)
     updateSelectInput(session, "fontface",  selected = input$fontface)
+    updateNumericInput(session, "height",   value = input$height)
+    updateNumericInput(session, "width",    value = input$width)
   })
   
   # Render preview
@@ -932,6 +960,25 @@ server <- function(input, output, session) {
     shiny::req(original_pdf())  # Ensure there is an original combined PDF
     shiny::req(combined_pdf())
     shiny::req(input$watermark_text)
+    
+    # Update the reactive values
+    watermark_settings$fontsize <- input$fontsize
+    watermark_settings$col      <- input$col
+    watermark_settings$alpha    <- input$alpha
+    watermark_settings$rot      <- input$rot
+    watermark_settings$fontface <- input$fontface
+    watermark_settings$height   <- input$height
+    watermark_settings$width    <- input$width
+    
+    # Update the modal input fields
+    updateNumericInput(session, "fontsize", value = input$fontsize)
+    updateTextInput(session, "col",         value = input$col)
+    updateSliderInput(session, "alpha",     value = input$alpha)
+    updateNumericInput(session, "rot",      value = input$rot)
+    updateSelectInput(session, "fontface",  selected = input$fontface)
+    updateNumericInput(session, "height",   value = input$height)
+    updateNumericInput(session, "width",    value = input$width)
+    
     tmp_pdf <- watermark_stamp(input_pdf          = combined_pdf_nowm(),
                                output_pdf         = file.path(temp_dir, paste0("preview_", format(Sys.time(), "%Y%m%d%H%M%S"), ".pdf")),
                                watermark_text     = input$watermark_text,
@@ -940,7 +987,9 @@ server <- function(input, output, session) {
                                fallback_col       = defaultwm_col,
                                watermark_alpha    = watermark_settings$alpha,
                                watermark_rot      = watermark_settings$rot,
-                               watermark_fontface = watermark_settings$fontface)
+                               watermark_fontface = watermark_settings$fontface,
+                               watermark_height   = watermark_settings$height,
+                               watermark_width    = watermark_settings$width)
     combined_pdf(tmp_pdf)
   })
   
@@ -957,7 +1006,9 @@ server <- function(input, output, session) {
                                fallback_col       = defaultwm_col,
                                watermark_alpha    = watermark_settings$alpha,
                                watermark_rot      = watermark_settings$rot,
-                               watermark_fontface = watermark_settings$fontface)
+                               watermark_fontface = watermark_settings$fontface,
+                               watermark_height   = watermark_settings$height,
+                               watermark_width    = watermark_settings$width)
     combined_pdf(tmp_pdf)
   })
   
@@ -990,7 +1041,9 @@ server <- function(input, output, session) {
                                        fallback_col       = defaultwm_col,
                                        watermark_alpha    = watermark_settings$alpha,
                                        watermark_rot      = watermark_settings$rot,
-                                       watermark_fontface = watermark_settings$fontface)
+                                       watermark_fontface = watermark_settings$fontface,
+                                       watermark_height   = watermark_settings$height,
+                                       watermark_width    = watermark_settings$width)
         showNotification(paste0("Watermark (", input$watermark_text, ") applied!"), type = "message")
       }
       
