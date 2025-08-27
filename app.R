@@ -334,8 +334,9 @@ ui <- if (requireNamespace("bslib", quietly = TRUE) && bootstrap_theme) { # Load
            
            # Watermark input and settings
            fluidRow(
-             column(10, textInput("watermark_text", label = NULL, placeholder = "e.g. 'For Internal Use Only'")),
-             column(2, actionButton("customize_watermark", label = NULL, icon = icon("gear"), class = "btn-primary"))
+             column(9, textInput("watermark_text", label = NULL, placeholder = "e.g. 'For Internal Use Only'")),
+             column(1, actionButton("customize_watermark", label = NULL, icon = icon("gear"), class = "btn-secondary")),
+             column(2, actionButton("render_preview2", label = NULL, icon = icon("play"), class = "btn-primary")),
            ),
            
       ), # end of card
@@ -517,8 +518,9 @@ ui <- if (requireNamespace("bslib", quietly = TRUE) && bootstrap_theme) { # Load
         
         # Watermark input and settings
         fluidRow(
-          column(10, textInput("watermark_text", label = NULL, placeholder = "e.g. 'For Internal Use Only'")),
-          column(2, actionButton("customize_watermark", label = NULL, icon = icon("gear"), class = "btn-primary"))
+          column(9, textInput("watermark_text", label = NULL, placeholder = "e.g. 'For Internal Use Only'")),
+          column(1, actionButton("customize_watermark", label = NULL, icon = icon("gear"), class = "btn-secondary")),
+          column(2, actionButton("render_preview2", label = NULL, icon = icon("play"), class = "btn-primary")),
         ),
         
         tags$hr(style = "border: 2px solid #ccc;"), # Grey divider line
@@ -879,7 +881,21 @@ server <- function(input, output, session) {
     shiny::req(original_pdf())  # Ensure there is an original combined PDF
     shiny::req(combined_pdf())
     shiny::req(input$watermark_text)
-    #combined_pdf(combined_pdf_nowm())
+    tmp_pdf <- watermark_stamp(input_pdf          = combined_pdf_nowm(),
+                               output_pdf         = file.path(temp_dir, paste0("preview_", format(Sys.time(), "%Y%m%d%H%M%S"), ".pdf")),
+                               watermark_text     = input$watermark_text,
+                               watermark_fontsize = watermark_settings$fontsize,
+                               watermark_col      = watermark_settings$col,
+                               watermark_alpha    = watermark_settings$alpha,
+                               watermark_rot      = watermark_settings$rot)
+    combined_pdf(tmp_pdf)
+  })
+  
+  # Render preview from main UI
+  observeEvent(input$render_preview2, {
+    shiny::req(original_pdf())  # Ensure there is an original combined PDF
+    shiny::req(combined_pdf())
+    #shiny::req(input$watermark_text) # Want to show users if no text is applied too
     tmp_pdf <- watermark_stamp(input_pdf          = combined_pdf_nowm(),
                                output_pdf         = file.path(temp_dir, paste0("preview_", format(Sys.time(), "%Y%m%d%H%M%S"), ".pdf")),
                                watermark_text     = input$watermark_text,
