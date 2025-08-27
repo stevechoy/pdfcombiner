@@ -180,6 +180,21 @@ watermark_stamp <- function(input_pdf,
                             watermark_alpha = 0.6,
                             watermark_rot   = 45) {
   
+  # Validate the watermark color
+  validate_color <- function(color) {
+    tryCatch({
+      grDevices::col2rgb(color)  # Check if the color is valid
+      TRUE  # If no error, the color is valid
+    }, error = function(e) {
+      FALSE  # If an error occurs, the color is invalid
+    })
+  }
+  
+  if (!validate_color(watermark_col)) {
+    showNotification(paste0("Provided color is not valid. Using the default color (", defaultwm_col, ") instead."), type = "error")
+    watermark_col <- defaultwm_col
+  }
+  
   # Create a temporary PDF with the watermark text
   temp_watermark_pdf <- tempfile(fileext = ".pdf")
   pdf(temp_watermark_pdf, width = 8.5, height = 11)  # Standard US Letter size, i.e. approximately 216 mm by 279 mm, is different than A4 at 210 mm by 297 mm
@@ -834,7 +849,7 @@ server <- function(input, output, session) {
       title = "Customize Watermark Settings",
       easyClose = TRUE, fade = TRUE,
       numericInput("fontsize", "Font Size", value = watermark_settings$fontsize, min = 1),
-      textInput("col", "Color (character or Hex)", value = watermark_settings$col),
+      textInput("col", HTML('Color (character or Hex) <a href="https://r-charts.com/colors/" target="_blank">[View Color List]</a>'), value = watermark_settings$col),
       sliderInput("alpha", "Transparency (Alpha)", min = 0, max = 1, value = watermark_settings$alpha),
       numericInput("rot", "Rotation Angle", value = watermark_settings$rot, min = 0, max = 360),
       footer = tagList(
