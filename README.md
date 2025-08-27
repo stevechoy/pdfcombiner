@@ -15,6 +15,8 @@ Features include:
 - Smart lossless PDF compression (i.e. always return the smallest file regardless of compression)
 - Experimental feature of PDF conversion into Word, Excel, PowerPoint, or .png images  
 
+PDF Combiner aims to **fill a niche for R users with restricted permissions** (i.e. corporate environment) to still have a local option to handle most of their PDF needs for free.
+
 ## Pre-requisites
 
 To run PDF Combiner locally, you may need to install a few R packages:
@@ -31,7 +33,7 @@ install.packages(pdftools)
 
 ### Installing Java
 
-The `{staplr}` package is **highly recommended** as it supports bookmarks, however it uses Java so you may need to <a href="https://www.java.com/en/download/" target="_blank">install Java separately</a> if your system does not currently have it. Choose the 64-bit version if your R installation is also 64-bit.  
+The `{staplr}` <a href="https://github.com/pridiltal/staplr/" target="_blank">package</a> is **highly recommended** as it supports bookmarks, however it uses Java so you may need to <a href="https://www.java.com/en/download/" target="_blank">install Java separately</a> if your system does not currently have it. Choose the 64-bit version if your R installation is also 64-bit.  
 
 After installation, you are recommended to restart your R instance before proceeding.  
 
