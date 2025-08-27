@@ -177,6 +177,7 @@ watermark_stamp <- function(input_pdf,
                             watermark_text,
                             watermark_fontsize = 50,
                             watermark_col = "gray80",
+                            fallback_col  = "gray80",
                             watermark_alpha = 0.6,
                             watermark_rot   = 45) {
   
@@ -192,7 +193,7 @@ watermark_stamp <- function(input_pdf,
   
   if (!validate_color(watermark_col)) {
     showNotification(paste0("Provided color is not valid. Using the default color (", defaultwm_col, ") instead."), type = "error")
-    watermark_col <- defaultwm_col
+    watermark_col <- fallback_col
   }
   
   # Create a temporary PDF with the watermark text
@@ -901,6 +902,7 @@ server <- function(input, output, session) {
                                watermark_text     = input$watermark_text,
                                watermark_fontsize = watermark_settings$fontsize,
                                watermark_col      = watermark_settings$col,
+                               fallback_col       = defaultwm_col,
                                watermark_alpha    = watermark_settings$alpha,
                                watermark_rot      = watermark_settings$rot)
     combined_pdf(tmp_pdf)
@@ -916,6 +918,7 @@ server <- function(input, output, session) {
                                watermark_text     = input$watermark_text,
                                watermark_fontsize = watermark_settings$fontsize,
                                watermark_col      = watermark_settings$col,
+                               fallback_col       = defaultwm_col,
                                watermark_alpha    = watermark_settings$alpha,
                                watermark_rot      = watermark_settings$rot)
     combined_pdf(tmp_pdf)
@@ -947,6 +950,7 @@ server <- function(input, output, session) {
                                        watermark_text     = input$watermark_text,
                                        watermark_fontsize = watermark_settings$fontsize,
                                        watermark_col      = watermark_settings$col,
+                                       fallback_col       = defaultwm_col,
                                        watermark_alpha    = watermark_settings$alpha,
                                        watermark_rot      = watermark_settings$rot)
         showNotification(paste0("Watermark (", input$watermark_text, ") applied!"), type = "message")
