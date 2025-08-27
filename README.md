@@ -15,7 +15,7 @@ Features include:
 - Smart lossless PDF compression (i.e. always return the smallest file regardless of compression)
 - Experimental feature of PDF conversion into Word, Excel, PowerPoint, or .png images  
 
-PDF Combiner aims to fill a niche where R users with *restricted* permissions (i.e. corporate environment) to still have a **local option** to handle most of their PDF needs for free.
+PDF Combiner aims to fill a niche where R users with *restricted* permissions (i.e. corporate environment) could still have a **local option** to handle most of their PDF needs for free.
 
 ## Pre-requisites
 
