@@ -3,9 +3,10 @@
 max_file_size      <- 500      # max file size in MB, change if needed
 bootstrap_theme    <- TRUE     # When TRUE, uses bslib bootstrap theme to allow minimizing sidebar
 sidebar_width      <- 700      # Only applicable when bootstrap theme is used, in pixels
-watermark_fontsize <- 50       # Watermark font size
-watermark_col      <- "gray80" # Watermark color
-watermark_alpha    <- 0.6      # Watermark alpha
+defaultwm_fontsize <- 50       # Default Watermark font size
+defaultwm_col      <- "gray80" # Default Watermark color
+defaultwm_alpha    <- 0.6      # Default Watermark alpha
+defaultwm_rot      <- 45       # Default Watermark rotation angle
 
 ### Setup ######################################################################
 
@@ -176,7 +177,8 @@ watermark_stamp <- function(input_pdf,
                             watermark_text,
                             watermark_fontsize = 50,
                             watermark_col = "gray80",
-                            watermark_alpha = 0.6) {
+                            watermark_alpha = 0.6,
+                            watermark_rot   = 45) {
   
   # Create a temporary PDF with the watermark text
   temp_watermark_pdf <- tempfile(fileext = ".pdf")
@@ -184,7 +186,7 @@ watermark_stamp <- function(input_pdf,
   grid::grid.text(
     label = watermark_text,
     x = 0.5, y = 0.5, gp = grid::gpar(fontsize = watermark_fontsize, col = watermark_col, alpha = watermark_alpha, fontface = "bold"),
-    rot = 45  # Rotate the watermark text
+    rot = watermark_rot  # Rotate the watermark text
   )
   dev.off()
   
@@ -323,13 +325,16 @@ ui <- if (requireNamespace("bslib", quietly = TRUE) && bootstrap_theme) { # Load
                tags$span(
                  "?",
                  style = "color: blue; cursor: help; font-weight: bold; margin-left: 5px; font-size: 20px;",
-                 title = "Applies a grey see-through text across all pages of the PDF when downloaded."
+                 title = "Applies a see-through text across all pages of the PDF when downloaded."
                )
              )
            ),
            
-           # Watermark input
-           textInput("watermark_text", label = NULL, value = "", placeholder = "e.g. 'For Internal Use Only'")
+           # Watermark input and settings
+           fluidRow(
+             column(10, textInput("watermark_text", label = NULL, placeholder = "e.g. 'For Internal Use Only'")),
+             column(2, actionButton("customize_watermark", label = NULL, icon = icon("gear"), class = "btn-primary"))
+           ),
            
       ), # end of card
       
@@ -374,7 +379,7 @@ ui <- if (requireNamespace("bslib", quietly = TRUE) && bootstrap_theme) { # Load
            )
       ),
       
-      tags$p("Author: Steve Choy (v1.9.2)",
+      tags$p("Author: Steve Choy (v1.9.3)",
              a(href = "https://github.com/stevechoy/PDF_Combiner", "(GitHub Repo)", target = "_blank"),
              style = "font-size: 0.9em; color: #555; text-align: left;")
     ), # end of sidebar
@@ -501,13 +506,16 @@ ui <- if (requireNamespace("bslib", quietly = TRUE) && bootstrap_theme) { # Load
             tags$span(
               "?",
               style = "color: blue; cursor: help; font-weight: bold; margin-left: 5px; font-size: 20px;",
-              title = "Applies a grey see-through text across all pages of the PDF when downloaded."
+              title = "Applies a see-through text across all pages of the PDF when downloaded."
             )
           )
         ),
         
-        # Watermark input
-        textInput("watermark_text", label = NULL, value = "", placeholder = "e.g. 'For Internal Use Only'"),
+        # Watermark input and settings
+        fluidRow(
+          column(10, textInput("watermark_text", label = NULL, placeholder = "e.g. 'For Internal Use Only'")),
+          column(2, actionButton("customize_watermark", label = NULL, icon = icon("gear"), class = "btn-primary"))
+        ),
         
         tags$hr(style = "border: 2px solid #ccc;"), # Grey divider line
 
@@ -549,7 +557,7 @@ ui <- if (requireNamespace("bslib", quietly = TRUE) && bootstrap_theme) { # Load
         ),
         
         br(),
-        tags$p("Author: Steve Choy (v1.9.2)",
+        tags$p("Author: Steve Choy (v1.9.3)",
                a(href = "https://github.com/stevechoy/PDF_Combiner", "(GitHub Repo)", target = "_blank"),
                style = "font-size: 0.9em; color: #555; text-align: left;")
       ), # end of sidebarPanel
@@ -573,6 +581,22 @@ server <- function(input, output, session) {
   shiny::addResourcePath("pdfs", temp_dir)  # Serve files from the temp directory
   #rotation_angle <- reactiveVal(0)      # Reactive value to store the current rotation angle for staplr, not currently used
   unlocked_pdf <- reactiveVal(NULL)     # Stores unlocked PDF path (singular file)
+  
+  # Default watermark settings
+  default_settings <- list(
+    fontsize = defaultwm_fontsize,
+    col      = defaultwm_col,
+    alpha    = defaultwm_alpha,
+    rot      = defaultwm_rot
+  )
+  
+  # Reactive values to store watermark settings
+  watermark_settings <- reactiveValues(
+    fontsize   = default_settings$fontsize,
+    col        = default_settings$col,
+    alpha      = default_settings$alpha,
+    rot        = default_settings$rot
+  )
   
   # Helper function to combine PDFs
   combine_pdfs <- function(pdf_paths, output_path) {
@@ -792,10 +816,57 @@ server <- function(input, output, session) {
     showNotification("Page reset successful! Restored to the current list of PDFs.", type = "message")
   })
   
+  # Show a modal dialog for customizing watermark settings
+  observeEvent(input$customize_watermark, {
+    showModal(modalDialog(
+      title = "Customize Watermark Settings",
+      easyClose = TRUE, fade = TRUE,
+      numericInput("fontsize", "Font Size", value = watermark_settings$fontsize, min = 1),
+      textInput("col", "Color (character or Hex)", value = watermark_settings$col),
+      sliderInput("alpha", "Transparency (Alpha)", min = 0, max = 1, value = watermark_settings$alpha),
+      numericInput("rot", "Rotation Angle", value = watermark_settings$rot, min = 0, max = 360),
+      footer = tagList(
+        actionButton("reset_wm", "Reset", class = "btn-warning"),
+        actionButton("apply", "Apply Settings", class = "btn-success"),
+        modalButton("OK")
+      )
+    ))
+  })
+  
+  # Reset settings to default values
+  observeEvent(input$reset_wm, {
+    # Reset the reactive values
+    watermark_settings$fontsize <- default_settings$fontsize
+    watermark_settings$col      <- default_settings$col
+    watermark_settings$alpha    <- default_settings$alpha
+    watermark_settings$rot      <- default_settings$rot
+    
+    # Update the modal input fields
+    updateNumericInput(session, "fontsize", value = default_settings$fontsize)
+    updateTextInput(session, "col",         value = default_settings$col)
+    updateSliderInput(session, "alpha",     value = default_settings$alpha)
+    updateNumericInput(session, "rot",      value = default_settings$rot)
+  })
+  
+  # Reset settings to default values
+  observeEvent(input$apply, {
+    # Reset the reactive values
+    watermark_settings$fontsize <- input$fontsize
+    watermark_settings$col      <- input$col
+    watermark_settings$alpha    <- input$alpha
+    watermark_settings$rot      <- input$rot
+    
+    # Update the modal input fields
+    updateNumericInput(session, "fontsize", value = input$fontsize)
+    updateTextInput(session, "col",         value = input$col)
+    updateSliderInput(session, "alpha",     value = input$alpha)
+    updateNumericInput(session, "rot",      value = input$rot)
+  })
+  
   # Download UI
   output$download_ui <- renderUI({
     shiny::req(combined_pdf())
-    downloadButton("download", "Download Updated PDF")
+    downloadButton("download", "Download Updated PDF", class = "btn-primary")
   })
   
   output$download <- downloadHandler(
@@ -816,9 +887,10 @@ server <- function(input, output, session) {
         pdf_to_save <- watermark_stamp(input_pdf          = combined_pdf(),
                                        output_pdf         = file.path(temp_dir, paste0("stamped_", format(Sys.time(), "%Y%m%d%H%M%S"), ".pdf")),
                                        watermark_text     = input$watermark_text,
-                                       watermark_fontsize = watermark_fontsize,
-                                       watermark_col      = watermark_col,
-                                       watermark_alpha    = watermark_alpha)
+                                       watermark_fontsize = watermark_settings$fontsize,
+                                       watermark_col      = watermark_settings$col,
+                                       watermark_alpha    = watermark_settings$alpha,
+                                       watermark_rot      = watermark_settings$rot)
         showNotification(paste0("Watermark (", input$watermark_text, ") applied!"), type = "message")
       }
       
@@ -885,7 +957,7 @@ server <- function(input, output, session) {
       
       output$download_conversion_ui <- renderUI({
         shiny::req(converted_file)
-        downloadButton("download_conversion", paste0("Download ", format)) # requires a new variable here
+        downloadButton("download_conversion", paste0("Download ", format), class = "btn-primary") # requires a new variable here
       })
       
       output$download_conversion <- downloadHandler(
@@ -934,7 +1006,7 @@ server <- function(input, output, session) {
   # Download UI for unlocked PDF
   output$download_unlocked_ui <- renderUI({
     shiny::req(unlocked_pdf())
-    downloadButton("download_unlocked", "Download Unlocked PDF")
+    downloadButton("download_unlocked", "Download Unlocked PDF", class = "btn-primary")
   })
   
   output$download_unlocked <- downloadHandler(
