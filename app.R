@@ -383,7 +383,7 @@ ui <- if (requireNamespace("bslib", quietly = TRUE) && bootstrap_theme) { # Load
            )
       ),
       
-      tags$p("Author: Steve Choy (v1.9.2)",
+      tags$p("Author: Steve Choy (v1.9.3)",
              a(href = "https://github.com/stevechoy/PDF_Combiner", "(GitHub Repo)", target = "_blank"),
              style = "font-size: 0.9em; color: #555; text-align: left;")
     ), # end of sidebar
@@ -561,7 +561,7 @@ ui <- if (requireNamespace("bslib", quietly = TRUE) && bootstrap_theme) { # Load
         ),
         
         br(),
-        tags$p("Author: Steve Choy (v1.9.2)",
+        tags$p("Author: Steve Choy (v1.9.3)",
                a(href = "https://github.com/stevechoy/PDF_Combiner", "(GitHub Repo)", target = "_blank"),
                style = "font-size: 0.9em; color: #555; text-align: left;")
       ), # end of sidebarPanel
@@ -585,6 +585,7 @@ server <- function(input, output, session) {
   shiny::addResourcePath("pdfs", temp_dir)  # Serve files from the temp directory
   #rotation_angle <- reactiveVal(0)      # Reactive value to store the current rotation angle for staplr, not currently used
   unlocked_pdf <- reactiveVal(NULL)     # Stores unlocked PDF path (singular file)
+  combined_pdf_nowm <- reactiveVal(NULL) # Store combined_pdf without watermarks for final download
   
   # Default watermark settings
   default_settings <- list(
@@ -610,6 +611,7 @@ server <- function(input, output, session) {
       pdf_combine(unlist(pdf_paths), output = output_path)
     }
     combined_pdf(output_path)
+    combined_pdf_nowm(output_path)
     original_pdf(output_path) # Save the original combined PDF
     print(paste("Combined PDF Path:", output_path)) # Debugging: Print combined PDF path
   }
@@ -753,6 +755,7 @@ server <- function(input, output, session) {
     pdf_subset(pdf_path, pages = pages_to_keep, output = updated_pdf_path)
     #}
     combined_pdf(updated_pdf_path)  # Update the combined PDF
+    combined_pdf_nowm(updated_pdf_path)  # Update the combined PDF without watermarks
     
     # Debugging: Print updated PDF path
     print(paste("Updated PDF Path:", updated_pdf_path))
@@ -798,6 +801,7 @@ server <- function(input, output, session) {
     qpdf::pdf_rotate_pages(pdf_path, pages = pages_to_rotate, angle = 270, relative = TRUE, output = updated_pdf_path)
     #}
     combined_pdf(updated_pdf_path)  # Update the combined PDF
+    combined_pdf_nowm(updated_pdf_path)  # Update the combined PDF without watermarks
     
     # Debugging: Print updated PDF path
     print(paste("Updated PDF Path:", updated_pdf_path))
@@ -808,6 +812,7 @@ server <- function(input, output, session) {
   observeEvent(input$reset_btn, {
     shiny::req(original_pdf())  # Ensure there is an original combined PDF
     combined_pdf(original_pdf())  # Restore the original combined PDF
+    combined_pdf_nowm(original_pdf())  # Restore the original combined PDF no watermarks
     updateTextInput(session, "remove_pages", value = "")  # Reset page removal input
     showNotification("Page reset successful! Restored to the current list of PDFs.", type = "message")
   })
@@ -816,6 +821,7 @@ server <- function(input, output, session) {
   observeEvent(input$reset_btn_rot, {
     shiny::req(original_pdf())  # Ensure there is an original combined PDF
     combined_pdf(original_pdf())  # Restore the original combined PDF
+    combined_pdf_nowm(original_pdf())  # Restore the original combined PDF no watermarks
     updateTextInput(session, "rotate_pages", value = "")  # Reset page removal input
     showNotification("Page reset successful! Restored to the current list of PDFs.", type = "message")
   })
@@ -831,6 +837,7 @@ server <- function(input, output, session) {
       numericInput("rot", "Rotation Angle", value = watermark_settings$rot, min = 0, max = 360),
       footer = tagList(
         actionButton("reset_wm", "Reset", class = "btn-warning"),
+        actionButton("render_preview", "Render Preview", class = "btn-info"),
         actionButton("apply", "Apply Settings", class = "btn-success"),
         modalButton("OK")
       )
@@ -853,7 +860,7 @@ server <- function(input, output, session) {
   })
   
   # Apply new settings to update the watermark_settings reactive
-  observeEvent(input$apply, {
+  observeEvent(c(input$apply, input$render_preview), {
     # Update the reactive values
     watermark_settings$fontsize <- input$fontsize
     watermark_settings$col      <- input$col
@@ -865,6 +872,21 @@ server <- function(input, output, session) {
     updateTextInput(session, "col",         value = input$col)
     updateSliderInput(session, "alpha",     value = input$alpha)
     updateNumericInput(session, "rot",      value = input$rot)
+  })
+  
+  # Render preview
+  observeEvent(input$render_preview, {
+    shiny::req(original_pdf())  # Ensure there is an original combined PDF
+    shiny::req(combined_pdf())
+    #combined_pdf(combined_pdf_nowm())
+    tmp_pdf <- watermark_stamp(input_pdf          = combined_pdf_nowm(),
+                               output_pdf         = file.path(temp_dir, paste0("preview_", format(Sys.time(), "%Y%m%d%H%M%S"), ".pdf")),
+                               watermark_text     = input$watermark_text,
+                               watermark_fontsize = watermark_settings$fontsize,
+                               watermark_col      = watermark_settings$col,
+                               watermark_alpha    = watermark_settings$alpha,
+                               watermark_rot      = watermark_settings$rot)
+    combined_pdf(tmp_pdf)
   })
   
   # Download UI
@@ -888,7 +910,7 @@ server <- function(input, output, session) {
       if(input$watermark_text == "" | is.null(input$watermark_text)) {
         pdf_to_save <- combined_pdf()
       } else {
-        pdf_to_save <- watermark_stamp(input_pdf          = combined_pdf(),
+        pdf_to_save <- watermark_stamp(input_pdf          = combined_pdf_nowm(), # using the no wm version for applying final wm
                                        output_pdf         = file.path(temp_dir, paste0("stamped_", format(Sys.time(), "%Y%m%d%H%M%S"), ".pdf")),
                                        watermark_text     = input$watermark_text,
                                        watermark_fontsize = watermark_settings$fontsize,
