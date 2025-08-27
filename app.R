@@ -223,7 +223,8 @@ ui <- if (requireNamespace("bslib", quietly = TRUE) && bootstrap_theme) { # Load
       p("3. Verify changes on the right and download the updated PDF."),
       p(HTML("<strong>Note:</strong> You can also apply any optional features below, <em>before</em> downloading the updated PDF.")),
       
-      card(card_header("Input Files"),
+      card(class ="shadow border-primary",
+           card_header("Input Files"),
            if (requireNamespace("magick", quietly = TRUE)) {
              fileInput("pdf_files", paste0("Upload PDF or Image File(s): [Max ", max_file_size, " MB]"), multiple = TRUE,
                        accept = magick_formats)
@@ -264,7 +265,8 @@ ui <- if (requireNamespace("bslib", quietly = TRUE) && bootstrap_theme) { # Load
            ) # end of fluidRow for Combine button
       ), # end of card
       
-      card(card_header("Page Editor"),
+      card(class ="shadow",
+           card_header("Page Editor"),
            # Custom text with inline question mark tooltip
            tags$div(
              style = "display: flex; align-items: center;",  # Align label and input inline
@@ -338,7 +340,8 @@ ui <- if (requireNamespace("bslib", quietly = TRUE) && bootstrap_theme) { # Load
            
       ), # end of card
       
-      card(card_header("Remove Password Protection"),
+      card(class = "shadow",
+           card_header("Remove Password Protection"),
            
            # Custom text with inline question mark tooltip
            tags$div(
@@ -363,7 +366,8 @@ ui <- if (requireNamespace("bslib", quietly = TRUE) && bootstrap_theme) { # Load
            )
       ),
       
-      card(card_header("PDF Conversion"),
+      card(class = "bg-light shadow",
+           card_header("PDF Conversion"),
            # Dropdown for selecting output format
            selectInput(
              "convert_format",
@@ -848,9 +852,9 @@ server <- function(input, output, session) {
     updateNumericInput(session, "rot",      value = default_settings$rot)
   })
   
-  # Reset settings to default values
+  # Apply new settings to update the watermark_settings reactive
   observeEvent(input$apply, {
-    # Reset the reactive values
+    # Update the reactive values
     watermark_settings$fontsize <- input$fontsize
     watermark_settings$col      <- input$col
     watermark_settings$alpha    <- input$alpha
