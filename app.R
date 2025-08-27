@@ -878,6 +878,7 @@ server <- function(input, output, session) {
   observeEvent(input$render_preview, {
     shiny::req(original_pdf())  # Ensure there is an original combined PDF
     shiny::req(combined_pdf())
+    shiny::req(input$watermark_text)
     #combined_pdf(combined_pdf_nowm())
     tmp_pdf <- watermark_stamp(input_pdf          = combined_pdf_nowm(),
                                output_pdf         = file.path(temp_dir, paste0("preview_", format(Sys.time(), "%Y%m%d%H%M%S"), ".pdf")),
