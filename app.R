@@ -1116,7 +1116,7 @@ server <- function(input, output, session) {
         showNotification(paste("PDF converted to", format, "successfully!"), type = "message")
       }
       
-      setProgress(0.8, detail = "Finalizing conversion...")
+      setProgress(0.9, detail = "Finalizing conversion...")
       
       output$download_conversion_ui <- renderUI({
         shiny::req(converted_file)
