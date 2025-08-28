@@ -1,13 +1,13 @@
 # PDF Combiner
 
-PDF Combiner is a simple <a href="https://lagom.shinyapps.io/PDF_Combiner/" target="_blank">R Shiny App</a> that allows merging of pdf and/or image files with page removal and page rotation options.  
+PDF Combiner is a simple <a href="https://lagom.shinyapps.io/PDF_Combiner/" target="_blank">R Shiny App</a> that allows merging of pdf and/or image files with page selection, removal, or rotation options.  
 
 It is a **fast, free, and secure alternative** to commercial software such as Adobe Acrobat and/or various online websites which require users to sign-up, and it avoids any potential risks associated with uploading files elsewhere.    
 
 Features include:  
 - Supports multiple upload of PDFs or image files, either one at a time or all at once  
 - Select PDFs to be combined and change the order of files  
-- Remove pages by either using commas (1,2,3), hyphens (5-10), or a combination of both (1,2,3,5-10)  
+- Select / remove pages by either using commas (1,2,3), hyphens (5-10), or a combination of both (1,2,3,5-10)  
 - Rotate pages  
 - Watermark stamp with custom text
 - Built-in PDF viewer / editor to verify changes  
@@ -54,7 +54,7 @@ Instructions are included on the left hand side of the page.
 ## Notes
 
 - By default the modern Bootstrap UI theme is used (`{bslib}` package), which allows minimizing of the sidebar. You can turn off this option by setting `bootstrap_theme <- FALSE` in the app.R file.  
-- To retain bookmarks after combining PDFs, you need to install the `{staplr}` <a href="https://github.com/pridiltal/staplr/" target="_blank">package</a>. Importantly, bookmarks *cannot* be retained when any pages are removed or rotated (or when passwords are removed).  
+- To retain bookmarks after combining PDFs, you need to install the `{staplr}` <a href="https://github.com/pridiltal/staplr/" target="_blank">package</a>. Importantly, bookmarks *cannot* be retained when any pages are selected, removed, or rotated (or when passwords are removed).  
 - If you want to install a free graphical tool, you can check out <a href="https://www.pdflabs.com/tools/pdftk-the-pdf-toolkit/" target="_blank">PDFtk</a> (Windows only), which is the back-end for the `{staplr}` package.  
 - All PDF files are stored locally in a per-session temporary directory, given by the `tempdir()` function.  
 

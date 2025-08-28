@@ -318,11 +318,11 @@ ui <- if (requireNamespace("bslib", quietly = TRUE) && bootstrap_theme) { # Load
            tags$div(
              style = "display: flex; align-items: center;",  # Align label and input inline
              tags$label(
-               "Enter (Current) Page Numbers to Remove: ",
+               "Enter (Current) Page Numbers to Remove / Select: ",
                tags$span(
                  "?",
                  style = "color: blue; cursor: help; font-weight: bold; margin-left: 5px; font-size: 20px;",
-                 title = "Note: Bookmarks will not be retained when pages are removed."
+                 title = "Note: Bookmarks will not be retained when pages are removed or selected."
                )
              )
            ),
@@ -335,6 +335,8 @@ ui <- if (requireNamespace("bslib", quietly = TRUE) && bootstrap_theme) { # Load
              style = "display: flex; align-items: center; gap: 20px;",
              actionButton("remove_pages_btn",
                           label = tagList(icon("xmark", class = "fa-lg"), "Remove Pages")),  # Remove Pages button with xmark icon
+             actionButton("select_pages_btn",
+                          label = tagList(icon("check", class = "fa-lg"), "Select Pages")),  # Select Pages button with check icon
              actionButton("reset_btn", 
                           label = tagList(icon("sync-alt", class = "fa-lg"), "Reset"))  # Reset button with refresh icon
            ),
@@ -431,7 +433,7 @@ ui <- if (requireNamespace("bslib", quietly = TRUE) && bootstrap_theme) { # Load
            )
       ),
       
-      tags$p("Author: Steve Choy (v1.9.4)",
+      tags$p("Author: Steve Choy (v1.9.5)",
              a(href = "https://github.com/stevechoy/PDF_Combiner", "(GitHub Repo)", target = "_blank"),
              style = "font-size: 0.9em; color: #555; text-align: left;")
     ), # end of sidebar
@@ -500,11 +502,11 @@ ui <- if (requireNamespace("bslib", quietly = TRUE) && bootstrap_theme) { # Load
         tags$div(
           style = "display: flex; align-items: center;",  # Align label and input inline
           tags$label(
-            "Enter (Current) Page Numbers to Remove: ",
+            "Enter (Current) Page Numbers to Remove / Select: ",
             tags$span(
               "?",
               style = "color: blue; cursor: help; font-weight: bold; margin-left: 5px; font-size: 20px;",
-              title = "Note: Bookmarks will not be retained when pages are removed."
+              title = "Note: Bookmarks will not be retained when pages are removed or selected."
             )
           )
         ),
@@ -517,6 +519,8 @@ ui <- if (requireNamespace("bslib", quietly = TRUE) && bootstrap_theme) { # Load
           style = "display: flex; align-items: center; gap: 20px;",
           actionButton("remove_pages_btn",
                        label = tagList(icon("xmark", class = "fa-lg"), "Remove Pages")),  # Remove Pages button with xmark icon
+          actionButton("select_pages_btn",
+                       label = tagList(icon("check", class = "fa-lg"), "Select Pages")),  # Select Pages button with check icon
           actionButton("reset_btn", 
                        label = tagList(icon("sync-alt", class = "fa-lg"), "Reset"))  # Reset button with refresh icon
         ),
@@ -610,7 +614,7 @@ ui <- if (requireNamespace("bslib", quietly = TRUE) && bootstrap_theme) { # Load
         ),
         
         br(),
-        tags$p("Author: Steve Choy (v1.9.4)",
+        tags$p("Author: Steve Choy (v1.9.5)",
                a(href = "https://github.com/stevechoy/PDF_Combiner", "(GitHub Repo)", target = "_blank"),
                style = "font-size: 0.9em; color: #555; text-align: left;")
       ), # end of sidebarPanel
@@ -782,33 +786,37 @@ server <- function(input, output, session) {
     )
   })
   
-  # Remove Pages
-  observeEvent(input$remove_pages_btn, {
-    shiny::req(combined_pdf(), input$remove_pages)
+  # Helper function to process pages
+  process_pdf_pages <- function(action, input_pages, input_pdf_path) {
+    shiny::req(input_pdf_path, input_pages)
     
-    # Parse the page numbers to remove
-    pages_to_remove <- parse_pages_to_remove(input$remove_pages)
+    # Parse the page numbers
+    pages <- parse_pages_to_remove(input_pages)
     
-    # Debugging: Print pages to remove
-    print(paste("Pages to Remove:", paste(pages_to_remove, collapse = ", ")))
+    # Debugging: Print pages
+    print(paste("Pages to ", action, ":", paste(pages, collapse = ", ")))
     
     # Read the combined PDF
-    pdf_path <- combined_pdf()
-    total_pages <- pdf_info(pdf_path)$pages
+    total_pages <- pdf_info(input_pdf_path)$pages
     
     # Validate page numbers
-    if (any(pages_to_remove < 1 | pages_to_remove > total_pages)) {
+    if (any(pages < 1 | pages > total_pages)) {
       showNotification("Invalid page numbers. Please enter valid page numbers within the range of the PDF.", type = "error")
-      return()
+      return(NULL)
     }
     
-    # Keep only the pages that are not in the removal list
-    pages_to_keep <- setdiff(seq_len(total_pages), pages_to_remove)
+    # Determine pages to keep based on the action
+    pages_to_keep <- switch(
+      action,
+      "Remove" = setdiff(seq_len(total_pages), pages),
+      "Select" = intersect(seq_len(total_pages), pages),
+      stop("Invalid action specified")
+    )
     
     # Check if there are any pages left to keep
     if (length(pages_to_keep) == 0) {
-      showNotification("Cannot remove all pages from the PDF. At least one page must remain.", type = "error")
-      return()
+      showNotification(paste("Cannot remove all pages from the PDF. At least one page must remain."), type = "error")
+      return(NULL)
     }
     
     # Create a new PDF with the remaining pages
@@ -817,14 +825,32 @@ server <- function(input, output, session) {
     #if(package_check("staplr", silent = TRUE)) {
     #  staplr::select_pages(selpages = pages_to_keep, input_filepath = pdf_path, output_filepath = updated_pdf_path)
     #} else {
-    pdf_subset(pdf_path, pages = pages_to_keep, output = updated_pdf_path)
+    pdf_subset(input_pdf_path, pages = pages_to_keep, output = updated_pdf_path)
     #}
-    combined_pdf(updated_pdf_path)  # Update the combined PDF
-    combined_pdf_nowm(updated_pdf_path)  # Update the combined PDF without watermarks
+    
+    # Update reactive variables
+    combined_pdf(updated_pdf_path)
+    combined_pdf_nowm(updated_pdf_path)
     
     # Debugging: Print updated PDF path
     print(paste("Updated PDF Path:", updated_pdf_path))
-    showNotification("Pages removed successfully!", type = "message")
+    showNotification(
+      switch(
+        action,
+        "Remove" = paste0("Pages Removed Successfully!"),
+        "Select" = paste0("Pages Selected Successfully!")
+      ),
+      type = "message")
+  }
+  
+  # Remove Pages
+  observeEvent(input$remove_pages_btn, {
+    process_pdf_pages("Remove", input$remove_pages, combined_pdf())
+  })
+  
+  # Select Pages
+  observeEvent(input$select_pages_btn, {
+    process_pdf_pages("Select", input$remove_pages, combined_pdf())
   })
   
   # Rotate Pages
