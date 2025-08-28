@@ -108,6 +108,7 @@ convert_to_powerpoint <- function(pdf_path, output_path) {
 
 convert_to_images <- function(pdf_path, output_dir, dpi = 300) {
   # Read the PDF as an image object
+  setProgress(value = 0.3, detail = paste0("Reading as images"))
   pdf_images <- magick::image_read_pdf(pdf_path, density = dpi)
   
   # Get the total number of pages
@@ -118,6 +119,7 @@ convert_to_images <- function(pdf_path, output_dir, dpi = 300) {
   
   # Loop through each page and save it as a PNG file
   for (i in seq_len(total_pages)) {
+    setProgress(value = 0.5, detail = paste0("Saving page ", i , "/", total_pages))
     # Extract the current page as an image
     page_image <- pdf_images[i]
     
@@ -132,6 +134,7 @@ convert_to_images <- function(pdf_path, output_dir, dpi = 300) {
   # If there are multiple pages, compress them into a ZIP file
   if (length(png_files) > 1) {
     zip_path <- file.path(output_dir, "images.zip")
+    setProgress(value = 0.7, detail = paste0("Compressing into .zip"))
     utils::zip(zipfile = zip_path, files = png_files)
     return(zip_path)
   } else if (length(png_files) == 1) {
@@ -1113,7 +1116,7 @@ server <- function(input, output, session) {
         showNotification(paste("PDF converted to", format, "successfully!"), type = "message")
       }
       
-      incProgress(0.8, detail = "Finalizing conversion...")
+      setProgress(0.8, detail = "Finalizing conversion...")
       
       output$download_conversion_ui <- renderUI({
         shiny::req(converted_file)
