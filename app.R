@@ -660,11 +660,17 @@ server <- function(input, output, session) {
   combine_pdfs <- function(pdf_paths, output_path) {
     original_file_sizes(sum_disk_space(pdf_paths))
     print(paste("Sum of File Sizes (KB):", original_file_sizes())) # Debugging
-    # Interesting that when PDFs are read, they are already somehow compressed
-    if(package_check("staplr", bookmarks = TRUE)) {
-      staplr::staple_pdf(input_files = unlist(pdf_paths), output_filepath = output_path)
+    # If there's only 1 PDF file, don't do anything to it, just copy it to temp_dir
+    if(length(pdf_paths) == 1) {
+      file.copy(unlist(pdf_paths), output_path)
+      print(paste("Single File: copying from ", unlist(pdf_paths), " to ", output_path))# Debugging
     } else {
-      pdf_combine(unlist(pdf_paths), output = output_path)
+      # Interesting that when PDFs are read, they are already somehow compressed
+      if(package_check("staplr", bookmarks = TRUE)) {
+        staplr::staple_pdf(input_files = unlist(pdf_paths), output_filepath = output_path)
+      } else {
+        pdf_combine(unlist(pdf_paths), output = output_path)
+      }
     }
     combined_pdf(output_path)
     combined_pdf_nowm(output_path)
@@ -1057,11 +1063,11 @@ server <- function(input, output, session) {
         compressed_size <- file.info(compressed_path)$size / 1024 # Convert bytes to KB
         space_saved <- original_size - compressed_size
         percentage_saved <- space_saved / original_size * 100
-        cat("Original size:", original_size, "KB\n")
+        cat("Original size(s):", original_size, "KB\n")
         cat("Compressed size:", compressed_size, "KB\n")
         cat("Space saved:", space_saved, "KB\n")
         cat("Percentage saved:", round(percentage_saved, 2), "%\n")
-        showNotification(paste0("Original size: ", round(original_size), " KB, ",
+        showNotification(paste0("Original size(s): ", round(original_size), " KB, ",
                                 "Compressed size: ", round(compressed_size), " KB (",
                                 round(percentage_saved, 2), "% reduction)"), type = "message", duration = 15)
         if(space_saved > 0) {
