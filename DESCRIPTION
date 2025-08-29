@@ -1,6 +1,6 @@
 Package: pdfcombiner
 Title: Graphical User Interface for Manipulating PDF and Image Files
-Version: 1.9.6
+Version: 1.9.7
 Authors@R: 
     person("Steve", "Choy", , "steve.choy@outlook.com", role = c("aut", "cre", "cph"),
            comment = c(ORCID = "0009-0002-5385-4096"))
