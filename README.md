@@ -1,4 +1,9 @@
+
 # PDF Combiner 
+
+<!-- badges: start -->
+[![R-CMD-check](https://github.com/stevechoy/pdfcombiner/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/stevechoy/pdfcombiner/actions/workflows/R-CMD-check.yaml)
+<!-- badges: end -->
 
 PDF Combiner (`pdfcombiner`) is an R package that bundles a simple Shiny App for merging of pdf and/or image files with page selection, removal, or rotation options. The online demo version is available <a href="https://lagom.shinyapps.io/pdfcombiner/" target="_blank">here</a>.  
 

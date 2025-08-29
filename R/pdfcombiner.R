@@ -45,6 +45,15 @@ pdfcombiner <- function(max_file_size      = 500,
                         defaultwm_height   = 11,
                         defaultwm_width    = 8.5) {
 
+  # Sanity checks for arguments that should be a non-negative numeric
+  is_non_negative_numeric(max_file_size)
+  is_non_negative_numeric(sidebar_width)
+  is_non_negative_numeric(defaultwm_fontsize)
+  is_non_negative_numeric(defaultwm_alpha)
+  is_non_negative_numeric(defaultwm_rot)
+  is_non_negative_numeric(defaultwm_height)
+  is_non_negative_numeric(defaultwm_width)
+
   options(shiny.maxRequestSize = max_file_size * 1024^2)
 
   # Check if shinythemes is installed, optional
