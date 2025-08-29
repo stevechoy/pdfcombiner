@@ -15,3 +15,4 @@ A character containing total size in kilobytes
 \description{
 Sums up disk spaces used for PDF files
 }
+\keyword{internal}

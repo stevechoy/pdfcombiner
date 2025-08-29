@@ -19,3 +19,4 @@ a path to either a .zip file (if multiple images) or a single .png file
 \description{
 Convert to Images
 }
+\keyword{internal}

@@ -3,7 +3,7 @@
 #' @param filename String containing a user-provided file name
 #'
 #' @return a sanitized character for the file name
-#' @export
+#' @keywords internal
 sanitize_filename <- function(filename) {
   # Define illegal characters
   illegal_chars <- "[\\\\/:*?\"<>|]"

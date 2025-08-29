@@ -3,7 +3,7 @@
 #' @param input_string String containing pages to remove
 #'
 #' @return a numeric vector containing pages to remove
-#' @export
+#' @keywords internal
 parse_pages_to_remove <- function(input_string) {
   parts <- unlist(strsplit(input_string, ",")) # Split by commas
   pages <- unlist(lapply(parts, function(part) {

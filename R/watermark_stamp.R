@@ -14,7 +14,7 @@
 #' @param watermark_width Watermark overlay width (inches)
 #'
 #' @returns a path of output PDF
-#' @export
+#' @keywords internal
 watermark_stamp <- function(input_pdf,
                             output_pdf,
                             watermark_text,

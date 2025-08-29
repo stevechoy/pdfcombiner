@@ -9,6 +9,7 @@
 #' @import qpdf
 #' @import pdftools
 #' @importFrom grDevices dev.off pdf
+#' @importFrom utils packageVersion
 #' @keywords internal
 #' @noRd
 package_check <- function(pkg_name, bookmarks = FALSE, silent = FALSE) {

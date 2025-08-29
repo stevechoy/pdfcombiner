@@ -4,7 +4,7 @@
 #' @param output_path Path to save new PowerPoint file to
 #'
 #' @return a print statement (as a side effect)
-#' @export
+#' @keywords internal
 convert_to_powerpoint <- function(pdf_path, output_path) {
   # Extract text from the PDF
   pdf_text <- pdf_text(pdf_path)

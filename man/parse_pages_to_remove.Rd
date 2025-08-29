@@ -15,3 +15,4 @@ a numeric vector containing pages to remove
 \description{
 Parse Pages of a PDF
 }
+\keyword{internal}

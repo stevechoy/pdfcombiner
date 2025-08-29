@@ -4,7 +4,7 @@
 #' @param output_path Path to save new Word file to
 #'
 #' @return print statement (as a side effect)
-#' @export
+#' @keywords internal
 convert_to_word <- function(pdf_path, output_path) {
   # Extract text from the PDF
   pdf_text <- pdf_text(pdf_path)

@@ -5,7 +5,7 @@
 #' @param dpi dots per inch for .png files, default 300
 #'
 #' @return a path to either a .zip file (if multiple images) or a single .png file
-#' @export
+#' @keywords internal
 convert_to_images <- function(pdf_path, output_dir, dpi = 300) {
   # Read the PDF as an image object
   setProgress(value = 0.3, detail = paste0("Reading as images"))

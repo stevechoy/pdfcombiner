@@ -4,7 +4,7 @@
 #' @param file_list Names list of PDF files
 #'
 #' @returns A character containing total size in kilobytes
-#' @export
+#' @keywords internal
 sum_disk_space <- function(file_list) {
   # Initialize total size
   total_size_kb <- 0

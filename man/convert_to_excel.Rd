@@ -12,8 +12,9 @@ convert_to_excel(pdf_path, output_path)
 \item{output_path}{Path to save new Excel file to}
 }
 \value{
-Excel workbook (as a side effect)
+a Excel workbook (as a side effect)
 }
 \description{
 Convert to Excel
 }
+\keyword{internal}

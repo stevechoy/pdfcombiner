@@ -47,3 +47,4 @@ a path of output PDF
 \description{
 Watermark Stamp
 }
+\keyword{internal}
