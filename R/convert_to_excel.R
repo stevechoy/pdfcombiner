@@ -3,7 +3,7 @@
 #' @param pdf_path Path of input PDF
 #' @param output_path Path to save new Excel file to
 #'
-#' @return Excel workbook (as a side effect)
+#' @return a Excel workbook (as a side effect)
 #' @export
 convert_to_excel <- function(pdf_path, output_path) {
   # Extract text from the PDF
