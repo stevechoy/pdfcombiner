@@ -17,6 +17,7 @@
 #' @param defaultwm_fontface Default Watermark fontface ("plain", "italic", "bold", "bold.italic")
 #' @param defaultwm_height   Default Watermark height in inches (US letter size = 11,  A4 = 11.69)
 #' @param defaultwm_width    Default Watermark height in inches (US letter size = 8.5, A4 = 8.27)
+#' @param image_dpi          Dots per inch for use when converting to images
 #'
 #' @details
 #' The user is highly recommended to also install the \link[staplr]{staplr} package as it supports bookmarks, however
@@ -44,7 +45,8 @@ pdfcombiner <- function(max_file_size      = 500,
                         defaultwm_rot      = 45,
                         defaultwm_fontface = "bold",
                         defaultwm_height   = 11,
-                        defaultwm_width    = 8.5) {
+                        defaultwm_width    = 8.5,
+                        image_dpi          = 300) {
 
   # Sanity checks for arguments that should be a non-negative numeric
   is_non_negative_numeric(max_file_size)
@@ -249,7 +251,7 @@ pdfcombiner <- function(max_file_size      = 500,
                     )
         ),
 
-        tags$p("Author: Steve Choy (v1.9.6)",
+        tags$p("Author: Steve Choy (v1.9.7)",
                a(href = "https://github.com/stevechoy/pdfcombiner", "(GitHub Repo)", target = "_blank"),
                style = "font-size: 0.9em; color: #555; text-align: left;")
       ), # end of sidebar
@@ -430,7 +432,7 @@ pdfcombiner <- function(max_file_size      = 500,
           ),
 
           br(),
-          tags$p("Author: Steve Choy (v1.9.6)",
+          tags$p("Author: Steve Choy (v1.9.7)",
                  a(href = "https://github.com/stevechoy/PDF_Combiner", "(GitHub Repo)", target = "_blank"),
                  style = "font-size: 0.9em; color: #555; text-align: left;")
         ), # end of sidebarPanel
@@ -955,7 +957,7 @@ pdfcombiner <- function(max_file_size      = 500,
           showNotification(paste("PDF converted to", format, "successfully!"), type = "message")
 
         } else if (format == "Images (.png as a zip file)" && package_check("magick")) {
-          converted_file <- convert_to_images(combined_pdf(), temp_dir)
+          converted_file <- convert_to_images(combined_pdf(), temp_dir, dpi = image_dpi)
           showNotification(paste("PDF converted to", format, "successfully!"), type = "message")
         }
 
