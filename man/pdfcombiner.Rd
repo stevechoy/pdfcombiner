@@ -14,7 +14,8 @@ pdfcombiner(
   defaultwm_rot = 45,
   defaultwm_fontface = "bold",
   defaultwm_height = 11,
-  defaultwm_width = 8.5
+  defaultwm_width = 8.5,
+  image_dpi = 300
 )
 }
 \arguments{
@@ -37,6 +38,8 @@ pdfcombiner(
 \item{defaultwm_height}{Default Watermark height in inches (US letter size = 11,  A4 = 11.69)}
 
 \item{defaultwm_width}{Default Watermark height in inches (US letter size = 8.5, A4 = 8.27)}
+
+\item{image_dpi}{Dots per inch for use when converting to images}
 }
 \value{
 a Shiny App
