@@ -81,6 +81,7 @@ Instructions are included on the left hand side of the page.
 - To retain bookmarks after combining PDFs, you need to install the `{staplr}` [package](https://github.com/pridiltal/staplr/). Importantly, bookmarks *cannot* be retained when any pages are selected, removed, or rotated (or when passwords are removed).  
 - If you want to install a free graphical tool, you can check out [PDFtk](https://www.pdflabs.com/tools/pdftk-the-pdf-toolkit/) (Windows only), which is the back-end for the `{staplr}` package.  
 - All PDF files are stored locally in a per-session temporary directory, given by the `tempdir()` function.  
+- To watermark an entire document in a scripted workflow, you may utilize the internal function `watermark_stamp()`, e.g. `pdfcombiner:::watermark_stamp(input_pdf = "path/to/input.pdf", output_pdf = "path/to/output.pdf", watermark_text = "Some Text")`.  
 
 ## Known Issues
 
