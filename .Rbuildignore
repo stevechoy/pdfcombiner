@@ -12,3 +12,4 @@
 ^app\.R$
 ^inst/
 ^README\.html$
+^cran-comments\.md$
