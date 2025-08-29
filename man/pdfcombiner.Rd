@@ -42,14 +42,15 @@ pdfcombiner(
 a Shiny App
 }
 \description{
-Launches the PDF Combiner Shiny App. By default it uses the bootstrap theme,
+Launches the PDF Combiner \link[shiny]{shiny} App. Instructions on usage are
+included on the left hand side of the page. By default it uses the bootstrap theme,
 allowing minimization of the sidebar. Set argument \code{boostrap_theme = FALSE} to turn this
 off.
 }
 \details{
-The user is highly recommended to also install the \code{staplr} package as it supports bookmarks, however
+The user is highly recommended to also install the \link[staplr]{staplr} package as it supports bookmarks, however
 it uses Java so you may need to install Java separately if your system does not currently have it.
-In addition, the \code{magick} package is recommended for supporting uploading of image files.
+In addition, the \link[magick]{magick} package is recommended for supporting uploading of image files.
 }
 \note{
 All PDF files are stored locally in a per-session temporary directory, given by the \code{tempdir()} function.
@@ -60,5 +61,5 @@ pdfcombiner(bootstrap_theme = FALSE) # Do not use bootstrap theme (if `shiny` ve
 }
 }
 \seealso{
-\url{https://github.com/stevechoy/pdfcombiner}
+\url{https://github.com/stevechoy/pdfcombiner}, \link[pdftools]{pdftools}, \link[qpdf]{qpdf}
 }

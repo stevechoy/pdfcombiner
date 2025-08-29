@@ -16,7 +16,7 @@ Defaults to \code{FALSE}, in which case the function returns \code{FALSE} for in
 A logical value:
 \itemize{
 \item \code{TRUE} if \code{x} is a non-negative numeric scalar.
-\item \code{FALSE} if \code{x} is not a non-negative numeric scalar and \code{throw_error = FALSE}.
+\item \code{FALSE} if \code{x} is not a non-negative numeric scalar`.
 }
 }
 \description{
@@ -26,21 +26,5 @@ It can optionally throw an error if the input is invalid.
 \details{
 This function is intended for internal use within the package to validate numeric inputs.
 It ensures that the input is numeric, has a length of 1, and is greater than 0.
-}
-\examples{
-# Valid input
-is_non_negative_numeric(10)  # Returns TRUE
-is_non_negative_numeric(0)  # Returns TRUE
-
-# Invalid inputs
-is_non_negative_numeric(-5)  # Returns FALSE
-is_non_negative_numeric("ten")  # Returns FALSE
-is_non_negative_numeric(c(1, 2))  # Returns FALSE
-
-# Throwing an error
-\dontrun{
-is_non_negative_numeric(-5, throw_error = TRUE)  # Throws an error
-}
-
 }
 \keyword{internal}

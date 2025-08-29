@@ -31,6 +31,10 @@ You can install the latest development version from GitHub:
 # install.packages(devtools)
 
 devtools::install_github("stevechoy/pdfcombiner")
+
+## Pending CRAN submission
+# install.packages(pdfcombiner)
+
 ```
 
 For advanced users, you may run PDF Combiner locally *without* installing it as a package (i.e. launch the App directly from R console), as long as you have the following packages:  

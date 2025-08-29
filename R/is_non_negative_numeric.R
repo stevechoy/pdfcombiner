@@ -9,26 +9,11 @@
 #'
 #' @return A logical value:
 #'   - `TRUE` if `x` is a non-negative numeric scalar.
-#'   - `FALSE` if `x` is not a non-negative numeric scalar and `throw_error = FALSE`.
+#'   - `FALSE` if `x` is not a non-negative numeric scalar`.
 #'
 #' @details
 #' This function is intended for internal use within the package to validate numeric inputs.
 #' It ensures that the input is numeric, has a length of 1, and is greater than 0.
-#'
-#' @examples
-#' # Valid input
-#' is_non_negative_numeric(10)  # Returns TRUE
-#' is_non_negative_numeric(0)  # Returns TRUE
-#'
-#' # Invalid inputs
-#' is_non_negative_numeric(-5)  # Returns FALSE
-#' is_non_negative_numeric("ten")  # Returns FALSE
-#' is_non_negative_numeric(c(1, 2))  # Returns FALSE
-#'
-#' # Throwing an error
-#' \dontrun{
-#' is_non_negative_numeric(-5, throw_error = TRUE)  # Throws an error
-#' }
 #'
 #' @keywords internal
 is_non_negative_numeric <- function(x, throw_error = TRUE) {
