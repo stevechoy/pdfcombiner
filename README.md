@@ -1,5 +1,5 @@
 
-# PDF Combiner <img align="right" src = "www/logo.png" width="135px">
+# PDF Combiner <img align="right" src = "www/logo.png" width="120px">
 
 <!-- badges: start -->
 [![R-CMD-check](https://github.com/stevechoy/pdfcombiner/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/stevechoy/pdfcombiner/actions/workflows/R-CMD-check.yaml)
