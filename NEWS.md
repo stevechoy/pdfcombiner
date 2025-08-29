@@ -1,5 +1,7 @@
 # pdfcombiner 1.9.7
 
+* Cleaned up for initial CRAN submission
+
 # pdfcombiner 1.9.6
 
-* Preparing for initial CRAN submission
+* R package conversion and minor clean-up
