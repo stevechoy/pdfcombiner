@@ -5,7 +5,7 @@
 [![R-CMD-check](https://github.com/stevechoy/pdfcombiner/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/stevechoy/pdfcombiner/actions/workflows/R-CMD-check.yaml)
 <!-- badges: end -->
 
-PDF Combiner (`pdfcombiner`) is an R package that bundles a simple Shiny App for merging of pdf and/or image files with page selection, removal, or rotation options. The online demo version is available <a href="https://lagom.shinyapps.io/pdfcombiner/" target="_blank">here</a>.  
+PDF Combiner (`{pdfcombiner}`) is an R package that bundles a simple Shiny App for merging of pdf and/or image files with page selection, removal, or rotation options. The online demo version is available <a href="https://lagom.shinyapps.io/pdfcombiner/" target="_blank">here</a>.  
 
 It is a **fast, free, and secure alternative** to commercial software such as Adobe Acrobat and/or various online websites which require users to sign-up, and it avoids any potential risks associated with uploading files elsewhere.    
 
@@ -55,7 +55,7 @@ shiny::runGitHub("stevechoy/pdfcombiner", subdir = "inst/shiny", launch.browser 
 
 ### Installing Java
 
-The `{staplr}` <a href="https://github.com/pridiltal/staplr/" target="_blank">package</a> is **highly recommended** as it supports bookmarks, however it uses Java so you may need to <a href="https://www.java.com/en/download/" target="_blank">install Java separately</a> if your system does not currently have it. Choose the 64-bit version if your R installation is also 64-bit.  
+The `{staplr}` <a href="https://github.com/pridiltal/staplr/" target="_blank">package</a> is **highly recommended** as it supports bookmarks, however it uses Java so you may need to install Java separately if your system does not currently have it (instructions are included on the `{staplr}` page). Tip: Choose the 64-bit version if your R installation is also 64-bit.  
 
 After installation, you are recommended to restart your R instance before proceeding.  
 
