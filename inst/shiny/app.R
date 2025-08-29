@@ -16,6 +16,9 @@ defaultwm_fontface <- "bold"   # Default Watermark fontface ("plain", "italic", 
 defaultwm_height   <- 11       # Default Watermark height in inches (US letter size = 11,  A4 = 11.69)
 defaultwm_width    <- 8.5      # Default Watermark height in inches (US letter size = 8.5, A4 = 8.27)
 
+library(shiny)
+library(pdftools)
+
 options(shiny.maxRequestSize = max_file_size * 1024^2)
 
 # Check if shinythemes is installed, optional
