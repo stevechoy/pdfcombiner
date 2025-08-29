@@ -12,9 +12,10 @@ BugReports: https://github.com/stevechoy/pdfcombiner/issues
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.2
-Imports: shiny,
-         pdftools,
-         qpdf
+Imports: 
+    shiny,
+    pdftools,
+    qpdf,
 Suggests: bslib,
           staplr,
           magick,
