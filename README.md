@@ -1,6 +1,6 @@
-# PDF Combiner
+# PDF Combiner 
 
-PDF Combiner is a simple <a href="https://lagom.shinyapps.io/PDF_Combiner/" target="_blank">R Shiny App</a> that allows merging of pdf and/or image files with page selection, removal, or rotation options.  
+PDF Combiner (`pdfcombiner`) is an R package that bundles a simple Shiny App for merging of pdf and/or image files with page selection, removal, or rotation options. The online demo version is available <a href="https://lagom.shinyapps.io/pdfcombiner/" target="_blank">here</a>.  
 
 It is a **fast, free, and secure alternative** to commercial software such as Adobe Acrobat and/or various online websites which require users to sign-up, and it avoids any potential risks associated with uploading files elsewhere.    
 
@@ -17,9 +17,18 @@ Features include:
 
 PDF Combiner aims to fill a niche where R users with *restricted* permissions (i.e. corporate environment) could still have a **local option** to handle most of their PDF needs for free.
 
-## Pre-requisites
+## Installation
 
-To run PDF Combiner locally, you may need to install a few R packages:
+You can install the latest development version from GitHub: 
+
+``` r
+## Install devtools first if required
+# install.packages(devtools)
+
+devtools::install_github("stevechoy/pdfcombiner")
+```
+
+For advanced users, you may run PDF Combiner locally *without* installing it as a package (i.e. launch the App directly from R console), as long as you have the following packages:  
 
 ``` r
 install.packages(shiny)
@@ -29,6 +38,10 @@ install.packages(pdftools)
 # install.packages(magick)   # Recommended, allows image files to be uploaded
 # install.packages(officer)  # Optional, only used for PDF conversion to Word / Powerpoint
 # install.packages(openxlsx) # Optional, only used for PDF conversion to Excel
+
+shiny::runGitHub("stevechoy/pdfcombiner", subdir = "inst/shiny", launch.browser = TRUE)
+
+## Or you can copy directly from https://github.com/stevechoy/pdfcombiner/blob/main/inst/shiny/app.R
 ```
 
 ### Installing Java
@@ -37,23 +50,23 @@ The `{staplr}` <a href="https://github.com/pridiltal/staplr/" target="_blank">pa
 
 After installation, you are recommended to restart your R instance before proceeding.  
 
-
 ## Running the App
 
-Simply save the <a href="https://github.com/stevechoy/PDF_Combiner/blob/main/app.R" target="_blank">app.R</a> file locally and run the App in R.  
-
-Alternatively, you may launch the App *directly* from R console (assuming you have the required packages listed above):
-
 ``` r
-shiny::runGitHub("stevechoy/PDF_Combiner", launch.browser = TRUE)
+library(pdfcombiner)
+pdfcombiner()
+
+## see ?pdfcombiner() for a list of options
+# pdfcombiner(bootstrap_theme = FALSE) # Turning off bootstrap theme for older versions of shiny
 ```
+
 Instructions are included on the left hand side of the page.
 
-![](example2.png)
+![](www/example2.png)
 
 ## Notes
 
-- By default the modern Bootstrap UI theme is used (`{bslib}` package), which allows minimizing of the sidebar. You can turn off this option by setting `bootstrap_theme <- FALSE` in the app.R file.  
+- By default the modern Bootstrap UI theme is used (`{bslib}` package), which allows minimizing of the sidebar. You can turn off this option by setting `bootstrap_theme = FALSE` during App launch.  
 - To retain bookmarks after combining PDFs, you need to install the `{staplr}` <a href="https://github.com/pridiltal/staplr/" target="_blank">package</a>. Importantly, bookmarks *cannot* be retained when any pages are selected, removed, or rotated (or when passwords are removed).  
 - If you want to install a free graphical tool, you can check out <a href="https://www.pdflabs.com/tools/pdftk-the-pdf-toolkit/" target="_blank">PDFtk</a> (Windows only), which is the back-end for the `{staplr}` package.  
 - All PDF files are stored locally in a per-session temporary directory, given by the `tempdir()` function.  
