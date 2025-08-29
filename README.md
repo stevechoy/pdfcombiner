@@ -1,11 +1,13 @@
 
-# PDF Combiner 
+# PDF Combiner <img align="right" src = "www/logo.png" width="135px">
 
 <!-- badges: start -->
 [![R-CMD-check](https://github.com/stevechoy/pdfcombiner/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/stevechoy/pdfcombiner/actions/workflows/R-CMD-check.yaml)
 <!-- badges: end -->
 
-PDF Combiner (`{pdfcombiner}`) is an R package that bundles a simple Shiny App for merging of pdf and/or image files with page selection, removal, or rotation options. The online demo version is available <a href="https://lagom.shinyapps.io/pdfcombiner/" target="_blank">here</a>.  
+## Overview
+
+PDF Combiner (`{pdfcombiner}`) is an R package that bundles a simple Shiny App for merging of pdf and/or image files with page selection, removal, or rotation options. The online demo version is available [here](https://lagom.shinyapps.io/pdfcombiner/).  
 
 It is a **fast, free, and secure alternative** to commercial software such as Adobe Acrobat and/or various online websites which require users to sign-up, and it avoids any potential risks associated with uploading files elsewhere.    
 
@@ -55,7 +57,7 @@ shiny::runGitHub("stevechoy/pdfcombiner", subdir = "inst/shiny", launch.browser 
 
 ### Installing Java
 
-The `{staplr}` <a href="https://github.com/pridiltal/staplr/" target="_blank">package</a> is **highly recommended** as it supports bookmarks, however it uses Java so you may need to install Java separately if your system does not currently have it (instructions are included on the `{staplr}` page). Tip: Choose the 64-bit version if your R installation is also 64-bit.  
+The `{staplr}` [package](https://github.com/pridiltal/staplr/) is **highly recommended** as it supports bookmarks, however it uses Java so you may need to install Java separately if your system does not currently have it (instructions are included on the `{staplr}` page). Tip: Choose the 64-bit version if your R installation is also 64-bit.  
 
 After installation, you are recommended to restart your R instance before proceeding.  
 
@@ -75,9 +77,9 @@ Instructions are included on the left hand side of the page.
 
 ## Notes
 
-- By default the modern Bootstrap UI theme is used (`{bslib}` package), which allows minimizing of the sidebar. You can turn off this option by setting `bootstrap_theme = FALSE` during App launch.  
-- To retain bookmarks after combining PDFs, you need to install the `{staplr}` <a href="https://github.com/pridiltal/staplr/" target="_blank">package</a>. Importantly, bookmarks *cannot* be retained when any pages are selected, removed, or rotated (or when passwords are removed).  
-- If you want to install a free graphical tool, you can check out <a href="https://www.pdflabs.com/tools/pdftk-the-pdf-toolkit/" target="_blank">PDFtk</a> (Windows only), which is the back-end for the `{staplr}` package.  
+- By default the modern Bootstrap UI theme is used (from the `{bslib}` [package](https://github.com/rstudio/bslib)), which allows minimizing of the sidebar. You can turn off this option by setting `bootstrap_theme = FALSE` during App launch.  
+- To retain bookmarks after combining PDFs, you need to install the `{staplr}` [package](https://github.com/pridiltal/staplr/). Importantly, bookmarks *cannot* be retained when any pages are selected, removed, or rotated (or when passwords are removed).  
+- If you want to install a free graphical tool, you can check out [PDFtk](https://www.pdflabs.com/tools/pdftk-the-pdf-toolkit/) (Windows only), which is the back-end for the `{staplr}` package.  
 - All PDF files are stored locally in a per-session temporary directory, given by the `tempdir()` function.  
 
 ## Known Issues
