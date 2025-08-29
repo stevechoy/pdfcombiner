@@ -7,7 +7,7 @@ Authors@R:
 Maintainer: Steve Choy <steve.choy@outlook.com>
 Description: A 'shiny' app that supports merging of PDF and/or image files with page selection, removal, or rotation options.
     It is a fast, free, and secure alternative to commercial software or various online websites which require users to sign-up, and it avoids any potential risks associated with uploading files elsewhere.
-License: file LICENSE
+License: MIT + file LICENSE
 URL: https://github.com/stevechoy/pdfcombiner, https://lagom.shinyapps.io/pdfcombiner/
 BugReports: https://github.com/stevechoy/pdfcombiner/issues
 Encoding: UTF-8

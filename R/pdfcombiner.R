@@ -56,6 +56,11 @@ pdfcombiner <- function(max_file_size      = 500,
   is_non_negative_numeric(defaultwm_rot, "defaultwm_rot")
   is_non_negative_numeric(defaultwm_height, "defaultwm_height")
   is_non_negative_numeric(defaultwm_width, "defaultwm_width")
+  is_non_negative_numeric(image_dpi, "image_dpi")
+
+  if (!is.logical(bootstrap_theme)) {
+    stop("bootstrap_theme argument must be a logical (TRUE or FALSE).")
+  }
 
   # Check if the input is valid; if not, default to "bold"
   if (!(defaultwm_fontface %in% c("plain", "bold", "italic", "bold.italic"))) {
