@@ -1,6 +1,7 @@
 #' Magick Formats
 #'
 #' Character vector of accepted image format extensions
-#' @export
+#' @keywords internal
+#' @noRd
 magick_formats <- c(".pdf", ".png", ".jpeg", ".jpg", ".bmp", ".gif", ".tiff",
                     ".tif", ".webp", ".ico", ".heic", ".heif", ".svg", ".eps")

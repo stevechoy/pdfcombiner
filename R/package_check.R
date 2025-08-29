@@ -1,5 +1,5 @@
 #' @name package_check
-#' @title Package check
+#' @title Package check and showing shiny notifications
 #' @param pkg_name Package name in characters
 #' @param bookmarks Default FALSE. Whether to show shiny notification for bookmarks
 #' @param silent Default FALSE. Whether to show shiny notification
@@ -9,7 +9,8 @@
 #' @import qpdf
 #' @import pdftools
 #' @importFrom grDevices dev.off pdf
-#' @export
+#' @keywords internal
+#' @noRd
 package_check <- function(pkg_name, bookmarks = FALSE, silent = FALSE) {
   if (!requireNamespace(pkg_name, quietly = TRUE)) {
     if(!silent) {

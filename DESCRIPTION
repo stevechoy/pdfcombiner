@@ -1,10 +1,10 @@
 Package: pdfcombiner
-Title: Graphical User Interface for Manipulating PDF And Image files
+Title: Graphical User Interface for Manipulating PDF and Image files
 Version: 1.9.6
 Authors@R: 
-    person("Steve", "Choy", , "steve.choy@outlook.com", role = c("aut", "cre"),
+    person("Steve", "Choy", , "steve.choy@outlook.com", role = c("aut", "cre", "cph"),
            comment = c(ORCID = "0009-0002-5385-4096"))
-Description: PDF Combiner is a simple R Shiny App that supports merging of pdf and/or image files with page selection, removal, or rotation options.
+Description: PDF Combiner is a simple R Shiny App that supports merging of PDF and/or image files with page selection, removal, or rotation options.
     It is a fast, free, and secure alternative to commercial software or various online websites which require users to sign-up, and it avoids any potential risks associated with uploading files elsewhere.
 License: file LICENSE
 URL: https://github.com/stevechoy/pdfcombiner, https://lagom.shinyapps.io/pdfcombiner/
