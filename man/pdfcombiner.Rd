@@ -33,11 +33,11 @@ pdfcombiner(
 
 \item{defaultwm_rot}{Default Watermark rotation angle}
 
-\item{defaultwm_fontface}{Default Watermark fontface ("plain", "italic", "bold", "bold.italic")}
+\item{defaultwm_fontface}{Default Watermark fontface (one of "plain", "italic", "bold", "bold.italic")}
 
 \item{defaultwm_height}{Default Watermark height in inches (US letter size = 11,  A4 = 11.69)}
 
-\item{defaultwm_width}{Default Watermark height in inches (US letter size = 8.5, A4 = 8.27)}
+\item{defaultwm_width}{Default Watermark width in inches (US letter size = 8.5, A4 = 8.27)}
 
 \item{image_dpi}{Dots per inch for use when converting to images}
 }

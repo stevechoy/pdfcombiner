@@ -14,9 +14,9 @@
 #' @param defaultwm_col      Default Watermark color
 #' @param defaultwm_alpha    Default Watermark alpha
 #' @param defaultwm_rot      Default Watermark rotation angle
-#' @param defaultwm_fontface Default Watermark fontface ("plain", "italic", "bold", "bold.italic")
+#' @param defaultwm_fontface Default Watermark fontface (one of "plain", "italic", "bold", "bold.italic")
 #' @param defaultwm_height   Default Watermark height in inches (US letter size = 11,  A4 = 11.69)
-#' @param defaultwm_width    Default Watermark height in inches (US letter size = 8.5, A4 = 8.27)
+#' @param defaultwm_width    Default Watermark width in inches (US letter size = 8.5, A4 = 8.27)
 #' @param image_dpi          Dots per inch for use when converting to images
 #'
 #' @details
@@ -49,13 +49,18 @@ pdfcombiner <- function(max_file_size      = 500,
                         image_dpi          = 300) {
 
   # Sanity checks for arguments that should be a non-negative numeric
-  is_non_negative_numeric(max_file_size)
-  is_non_negative_numeric(sidebar_width)
-  is_non_negative_numeric(defaultwm_fontsize)
-  is_non_negative_numeric(defaultwm_alpha)
-  is_non_negative_numeric(defaultwm_rot)
-  is_non_negative_numeric(defaultwm_height)
-  is_non_negative_numeric(defaultwm_width)
+  is_non_negative_numeric(max_file_size, "max_file_size")
+  is_non_negative_numeric(sidebar_width, "sidebar_width")
+  is_non_negative_numeric(defaultwm_fontsize, "defaultwm_fontsize")
+  is_non_negative_numeric(defaultwm_alpha, "defaultwm_alpha")
+  is_non_negative_numeric(defaultwm_rot, "defaultwm_rot")
+  is_non_negative_numeric(defaultwm_height, "defaultwm_height")
+  is_non_negative_numeric(defaultwm_width, "defaultwm_width")
+
+  # Check if the input is valid; if not, default to "bold"
+  if (!(defaultwm_fontface %in% c("plain", "bold", "italic", "bold.italic"))) {
+    stop("Default_fontface must be one of 'plain', 'bold', 'italic', 'bold.italic'.")
+  }
 
   options(shiny.maxRequestSize = max_file_size * 1024^2)
 

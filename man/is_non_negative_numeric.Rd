@@ -4,10 +4,12 @@
 \alias{is_non_negative_numeric}
 \title{Check if a Number is a Non-Negative Numeric}
 \usage{
-is_non_negative_numeric(x, throw_error = TRUE)
+is_non_negative_numeric(x, name_of_func, throw_error = TRUE)
 }
 \arguments{
 \item{x}{The input to check. Should be a single numeric value.}
+
+\item{name_of_func}{Name of function to return as error message}
 
 \item{throw_error}{Logical. If \code{TRUE}, the function throws an error when the input is invalid.
 Defaults to \code{FALSE}, in which case the function returns \code{FALSE} for invalid inputs.}
