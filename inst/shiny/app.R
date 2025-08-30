@@ -1,8 +1,8 @@
-## This is the standalone version of PDF Combiner, provided ONLY for convenience
+## This is the standalone version of PDF Combiner (v1.9.8), provided ONLY for convenience
 ## when the user would like to launch from R console.
 ##
 ## This is only available on GitHub and not part of the `pdfcombiner` R package, therefore it may be outdated.
-## The user is **recommended** to install the latest development version when possible,
+## The user is **recommended** to install the latest development version where possible,
 ## i.e. with `devtools::install_github("stevechoy/pdfcombiner")`
 
 max_file_size      <- 500 # max file size in MB, change if needed
@@ -15,6 +15,8 @@ defaultwm_rot      <- 45       # Default Watermark rotation angle
 defaultwm_fontface <- "bold"   # Default Watermark fontface ("plain", "italic", "bold", "bold.italic")
 defaultwm_height   <- 11       # Default Watermark height in inches (US letter size = 11,  A4 = 11.69)
 defaultwm_width    <- 8.5      # Default Watermark height in inches (US letter size = 8.5, A4 = 8.27)
+image_dpi          <- 300      # Dots per inch for use when converting to images
+compact_level      <- "ebook"  # One of "none" (not used), "printer" (300dpi), "ebook" (150dpi), "screen" (72dpi), only applicable if Ghostscript is installed
 
 library(shiny)
 library(pdftools)
@@ -258,21 +260,37 @@ sum_disk_space <- function(file_list) {
   return(total_size_kb)
 }
 
-options(shiny.maxRequestSize = max_file_size * 1024^2)
-
-# Check if shinythemes is installed, optional
-if (requireNamespace("shinythemes", quietly = TRUE)) {
-  requireNamespace("shinythemes")
-  app_theme <- shinythemes::shinytheme("flatly")
-} else {
-  app_theme <- NULL  # Default to no theme if shinythemes is not installed
+#' Check if a Number is a Non-Negative Numeric
+#'
+#' This internal function checks whether the input is a non-negative numeric scalar.
+#' It can optionally throw an error if the input is invalid.
+#'
+#' @param x The input to check. Should be a single numeric value.
+#' @param name_of_func Name of function to return as error message
+#' @param throw_error Logical. If `TRUE`, the function throws an error when the input is invalid.
+#'   Defaults to `FALSE`, in which case the function returns `FALSE` for invalid inputs.
+#'
+#' @return A logical value:
+#'   - `TRUE` if `x` is a non-negative numeric scalar.
+#'   - `FALSE` if `x` is not a non-negative numeric scalar`.
+#'
+#' @details
+#' This function is intended for internal use within the package to validate numeric inputs.
+#' It ensures that the input is numeric, has a length of 1, and is greater than 0.
+#'
+#' @keywords internal
+is_non_negative_numeric <- function(x, name_of_func, throw_error = TRUE) {
+  if (is.numeric(x) && length(x) == 1 && x >= 0) {
+    return(TRUE)  # Valid numeric
+  } else {
+    if (throw_error) {
+      stop(paste0(name_of_func, " must be a non-negative numeric value."))
+    }
+    return(FALSE)  # Invalid input
+  }
 }
 
-# Check if staplr is installed, recommended for handling bookmarks
-if (requireNamespace("staplr", quietly = TRUE)) {
-  #requireNamespace(rJava) # If running this line fails, that means you need to install Java separately
-  requireNamespace("staplr")
-}
+### Shiny App ##################################################################
 
 # UI
 ui <- if (requireNamespace("bslib", quietly = TRUE) && bootstrap_theme && packageVersion("shiny") >= "1.7.4") { # Loads a bootstrap UI if bslib is installed
@@ -301,7 +319,27 @@ ui <- if (requireNamespace("bslib", quietly = TRUE) && bootstrap_theme && packag
                   # Selector for choosing PDFs to combine
                   selectInput("selected_pdfs", "Select Files to Combine (in this order - select / delete files below):", choices = NULL, multiple = TRUE),
 
-                  textInput("save_as_name", label = "(Optional) File Name to Save as...", value = "", placeholder = "Default if not provided: 'updated_pdf_YYYY-MM-DD.pdf'"),
+                  fluidRow(
+                    column(
+                      width = 9,
+                      textInput("save_as_name", label = "(Optional) File Name to Save as...", value = "", placeholder = "Default if not provided: 'updated_pdf_YYYY-MM-DD.pdf'")
+                    ),
+                    column(
+                      width = 3,
+                      div(style = "height: 38px;"),  # Empty div to add space
+                      checkboxInput("compress",
+                                    tagList(
+                                      HTML("&nbsp;Compress"),
+                                      tags$span(
+                                        "?",
+                                        style = "color: blue; cursor: help; font-weight: bold; margin-left: 0px; font-size: 16px;",
+                                        title = "Smart lossless compression, will always return the smallest file (details will be shown on bottom right)."
+                                      )
+                                    ),
+                                    value = TRUE
+                      )
+                    ) # end of column
+                  ), # end of fluidRow
 
                   # Combine button and compress checkbox
                   fluidRow(
@@ -316,16 +354,16 @@ ui <- if (requireNamespace("bslib", quietly = TRUE) && bootstrap_theme && packag
                     column(
                       width = 3,
                       div(style = "height: 5px;"),  # Empty div to add space
-                      checkboxInput("compress",
+                      checkboxInput("compact",
                                     tagList(
-                                      HTML("&nbsp;Compress"),
+                                      HTML("&nbsp;Compact"),
                                       tags$span(
                                         "?",
                                         style = "color: blue; cursor: help; font-weight: bold; margin-left: 0px; font-size: 16px;",
-                                        title = "Smart lossless compression, will always return the smallest file (details will be shown on bottom right)."
+                                        title = "**LOSSY** compression, i.e. degrades raster image quality (will first compress, then compact)."
                                       )
                                     ),
-                                    value = TRUE
+                                    value = FALSE
                       )
                     ) # end of column
                   ) # end of fluidRow for Combine button
@@ -452,7 +490,7 @@ ui <- if (requireNamespace("bslib", quietly = TRUE) && bootstrap_theme && packag
                   )
       ),
 
-      tags$p("Author: Steve Choy (v1.9.6)",
+      tags$p("Author: Steve Choy (v1.9.8)",
              a(href = "https://github.com/stevechoy/pdfcombiner", "(GitHub Repo)", target = "_blank"),
              style = "font-size: 0.9em; color: #555; text-align: left;")
     ), # end of sidebar
@@ -486,7 +524,27 @@ ui <- if (requireNamespace("bslib", quietly = TRUE) && bootstrap_theme && packag
         # Selector for choosing PDFs to combine
         selectInput("selected_pdfs", "Select Files to Combine (in this order - select / delete files below):", choices = NULL, multiple = TRUE),
 
-        textInput("save_as_name", label = "(Optional) File Name to Save as...", value = "", placeholder = "Default if not provided: 'updated_pdf_YYYY-MM-DD.pdf'"),
+        fluidRow(
+          column(
+            width = 9,
+            textInput("save_as_name", label = "(Optional) File Name to Save as...", value = "", placeholder = "Default if not provided: 'updated_pdf_YYYY-MM-DD.pdf'")
+          ),
+          column(
+            width = 3,
+            div(style = "height: 38px;"),  # Empty div to add space
+            checkboxInput("compress",
+                          tagList(
+                            HTML("&nbsp;Compress"),
+                            tags$span(
+                              "?",
+                              style = "color: blue; cursor: help; font-weight: bold; margin-left: 0px; font-size: 16px;",
+                              title = "Smart lossless compression, will always return the smallest file (details will be shown on bottom right)."
+                            )
+                          ),
+                          value = TRUE
+            )
+          ) # end of column
+        ), # end of fluidRow
 
         # Combine button and compress checkbox
         fluidRow(
@@ -501,16 +559,16 @@ ui <- if (requireNamespace("bslib", quietly = TRUE) && bootstrap_theme && packag
           column(
             width = 3,
             div(style = "height: 5px;"),  # Empty div to add space
-            checkboxInput("compress",
+            checkboxInput("compact",
                           tagList(
-                            HTML("&nbsp;Compress"),
+                            HTML("&nbsp;Compact"),
                             tags$span(
                               "?",
                               style = "color: blue; cursor: help; font-weight: bold; margin-left: 0px; font-size: 16px;",
-                              title = "Smart lossless compression, will always return the smallest file (details will be shown on bottom right)."
+                              title = "**LOSSY** compression, i.e. degrades raster image quality (will first compress, then compact)."
                             )
                           ),
-                          value = TRUE
+                          value = FALSE
             )
           ) # end of column
         ), # end of fluidRow for Combine button
@@ -633,7 +691,7 @@ ui <- if (requireNamespace("bslib", quietly = TRUE) && bootstrap_theme && packag
         ),
 
         br(),
-        tags$p("Author: Steve Choy (v1.9.6)",
+        tags$p("Author: Steve Choy (v1.9.8)",
                a(href = "https://github.com/stevechoy/PDF_Combiner", "(GitHub Repo)", target = "_blank"),
                style = "font-size: 0.9em; color: #555; text-align: left;")
       ), # end of sidebarPanel
@@ -1067,6 +1125,17 @@ server <- function(input, output, session) {
     combined_pdf(tmp_pdf)
   })
 
+  # Always set compress = TRUE when compact = TRUE
+  observeEvent(input$compact, {
+    if (input$compact) {
+      if(Sys.which("gs") == "") {
+        showNotification("Please first install Ghostscript to use the Compact option.", type = "error")
+        updateCheckboxInput(session, "compact", value = FALSE)
+      }
+      updateCheckboxInput(session, "compress", value = TRUE)
+    }
+  })
+
   # Download UI
   output$download_ui <- renderUI({
     shiny::req(combined_pdf())
@@ -1102,7 +1171,7 @@ server <- function(input, output, session) {
         showNotification(paste0("Watermark (", input$watermark_text, ") applied!"), type = "message")
       }
 
-      if(input$compress) {
+      if(input$compress & !input$compact) {
         compressed_path <- file.path(temp_dir, paste0("compressed_", format(Sys.time(), "%Y%m%d%H%M%S"), ".pdf"))
         showNotification("Compressing PDF File...", type = "message")
         pdf_compress(input = pdf_to_save, output = compressed_path, linearize = FALSE)
@@ -1125,7 +1194,31 @@ server <- function(input, output, session) {
           showNotification(paste0("Compression resulted in a larger file. Saving uncompressed version instead..."), type = "warning", duration = 10)
           file.copy(pdf_to_save, file)
         }
-
+      } else if (input$compact) {
+        compact_path <- file.path(temp_dir, paste0("compact_", format(Sys.time(), "%Y%m%d%H%M%S"), ".pdf"))
+        # First compress anyway
+        showNotification("Compressing PDF File prior to Compacting...", type = "message")
+        pdf_compress(input = pdf_to_save, output = compact_path, linearize = FALSE)
+        showNotification("Compacting lossy PDF File (could take very long, please wait patiently for download file to trigger)...", type = "message", duration = 20)
+        # Note that we're overwriting the same path of the compressed PDF!
+        tools::compactPDF(paths = compact_path, gs_quality = compact_level) # one of "none", "printer" (300 dpi), "ebook" (150 dpi), "screen" (72 dpi)
+        original_size <- original_file_sizes()
+        compacted_size <- file.info(compact_path)$size / 1024 # Convert bytes to KB
+        space_saved <- original_size - compacted_size
+        percentage_saved <- space_saved / original_size * 100
+        cat("Original size(s):", original_size, "KB\n")
+        cat("Compacted size:", compacted_size, "KB\n")
+        cat("Space saved:", space_saved, "KB\n")
+        cat("Percentage saved:", round(percentage_saved, 2), "%\n")
+        showNotification(paste0("Original size(s): ", round(original_size), " KB, ",
+                                "Compacted size: ", round(compacted_size), " KB (",
+                                round(percentage_saved, 2), "% reduction)"), type = "message", duration = 15)
+        if(space_saved > 0) {
+          file.copy(compact_path, file)
+        } else {
+          showNotification(paste0("Compact had no effect (no raster images?). Saving uncompressed version instead..."), type = "warning", duration = 10)
+          file.copy(pdf_to_save, file)
+        }
       } else {
         file.copy(pdf_to_save, file)
       }
@@ -1158,7 +1251,7 @@ server <- function(input, output, session) {
         showNotification(paste("PDF converted to", format, "successfully!"), type = "message")
 
       } else if (format == "Images (.png as a zip file)" && package_check("magick")) {
-        converted_file <- convert_to_images(combined_pdf(), temp_dir)
+        converted_file <- convert_to_images(combined_pdf(), temp_dir, dpi = image_dpi)
         showNotification(paste("PDF converted to", format, "successfully!"), type = "message")
       }
 
@@ -1226,4 +1319,3 @@ server <- function(input, output, session) {
 } # end of server
 
 shinyApp(ui = ui, server = server, options = list(launch.browser = TRUE))
-
