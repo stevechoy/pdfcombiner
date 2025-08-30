@@ -1006,7 +1006,12 @@ pdfcombiner <- function(max_file_size      = 500,
           showNotification(paste0("Original size(s): ", round(original_size), " KB, ",
                                   "Compacted size: ", round(compacted_size), " KB (",
                                   round(percentage_saved, 2), "% reduction)"), type = "message", duration = 15)
-          file.copy(compact_path, file)
+          if(space_saved > 0) {
+            file.copy(compact_path, file)
+          } else {
+            showNotification(paste0("Compact had no effect (no raster images?). Saving uncompressed version instead..."), type = "warning", duration = 10)
+            file.copy(pdf_to_save, file)
+          }
         } else {
           file.copy(pdf_to_save, file)
         }
