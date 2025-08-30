@@ -19,6 +19,7 @@
 #' @param defaultwm_width    Default Watermark width in inches (US letter size = 8.5, A4 = 8.27)
 #' @param image_dpi          Dots per inch for use when converting to images
 #' @param compact_level      One of "none" (not used), "printer" (300dpi), "ebook" (150dpi), "screen" (72dpi), only applicable if Ghostscript is installed
+#' @param linearize          Default FALSE. When TRUE, optimizes PDF for web-viewing (loads first page quickly)
 #'
 #' @details
 #' The user is highly recommended to also install the \link[staplr]{staplr} package as it supports bookmarks, however
@@ -48,7 +49,8 @@ pdfcombiner <- function(max_file_size      = 500,
                         defaultwm_height   = 11,
                         defaultwm_width    = 8.5,
                         image_dpi          = 300,
-                        compact_level      = "ebook") {
+                        compact_level      = "ebook",
+                        linearize          = FALSE) {
 
   # Sanity checks for arguments that should be a non-negative numeric
   is_non_negative_numeric(max_file_size, "max_file_size")
@@ -967,7 +969,7 @@ pdfcombiner <- function(max_file_size      = 500,
         if(input$compress & !input$compact) {
           compressed_path <- file.path(temp_dir, paste0("compressed_", format(Sys.time(), "%Y%m%d%H%M%S"), ".pdf"))
           showNotification("Compressing PDF File...", type = "message")
-          pdf_compress(input = pdf_to_save, output = compressed_path, linearize = FALSE)
+          pdf_compress(input = pdf_to_save, output = compressed_path, linearize = linearize)
           # Compare file sizes
           #original_size <- file.info(pdf_to_save)$size / 1024 # Convert bytes to KB
           original_size <- original_file_sizes()
@@ -991,7 +993,7 @@ pdfcombiner <- function(max_file_size      = 500,
           compact_path <- file.path(temp_dir, paste0("compact_", format(Sys.time(), "%Y%m%d%H%M%S"), ".pdf"))
           # First compress anyway
           showNotification("Compressing PDF File prior to Compacting...", type = "message")
-          pdf_compress(input = pdf_to_save, output = compact_path, linearize = FALSE)
+          pdf_compress(input = pdf_to_save, output = compact_path, linearize = linearize)
           showNotification("Compacting lossy PDF File (could take very long, please wait patiently for download file to trigger)...", type = "message", duration = 20)
           # Note that we're overwriting the same path of the compressed PDF!
           tools::compactPDF(paths = compact_path, gs_quality = compact_level) # one of "none", "printer" (300 dpi), "ebook" (150 dpi), "screen" (72 dpi)

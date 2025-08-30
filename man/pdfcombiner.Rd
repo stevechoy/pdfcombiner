@@ -16,7 +16,8 @@ pdfcombiner(
   defaultwm_height = 11,
   defaultwm_width = 8.5,
   image_dpi = 300,
-  compact_level = "ebook"
+  compact_level = "ebook",
+  linearize = FALSE
 )
 }
 \arguments{
@@ -43,6 +44,8 @@ pdfcombiner(
 \item{image_dpi}{Dots per inch for use when converting to images}
 
 \item{compact_level}{One of "none" (not used), "printer" (300dpi), "ebook" (150dpi), "screen" (72dpi), only applicable if Ghostscript is installed}
+
+\item{linearize}{Default FALSE. When TRUE, optimizes PDF for web-viewing (loads first page quickly)}
 }
 \value{
 a Shiny App
