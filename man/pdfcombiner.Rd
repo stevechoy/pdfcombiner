@@ -15,7 +15,8 @@ pdfcombiner(
   defaultwm_fontface = "bold",
   defaultwm_height = 11,
   defaultwm_width = 8.5,
-  image_dpi = 300
+  image_dpi = 300,
+  compact_level = "ebook"
 )
 }
 \arguments{
@@ -40,6 +41,8 @@ pdfcombiner(
 \item{defaultwm_width}{Default Watermark width in inches (US letter size = 8.5, A4 = 8.27)}
 
 \item{image_dpi}{Dots per inch for use when converting to images}
+
+\item{compact_level}{One of "none" (not used), "printer" (300dpi), "ebook" (150dpi), "screen" (72dpi), only applicable if Ghostscript is installed}
 }
 \value{
 a Shiny App

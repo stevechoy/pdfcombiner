@@ -18,6 +18,7 @@
 #' @param defaultwm_height   Default Watermark height in inches (US letter size = 11,  A4 = 11.69)
 #' @param defaultwm_width    Default Watermark width in inches (US letter size = 8.5, A4 = 8.27)
 #' @param image_dpi          Dots per inch for use when converting to images
+#' @param compact_level      One of "none" (not used), "printer" (300dpi), "ebook" (150dpi), "screen" (72dpi), only applicable if Ghostscript is installed
 #'
 #' @details
 #' The user is highly recommended to also install the \link[staplr]{staplr} package as it supports bookmarks, however
@@ -46,7 +47,8 @@ pdfcombiner <- function(max_file_size      = 500,
                         defaultwm_fontface = "bold",
                         defaultwm_height   = 11,
                         defaultwm_width    = 8.5,
-                        image_dpi          = 300) {
+                        image_dpi          = 300,
+                        compact_level      = "ebook") {
 
   # Sanity checks for arguments that should be a non-negative numeric
   is_non_negative_numeric(max_file_size, "max_file_size")
@@ -110,7 +112,27 @@ pdfcombiner <- function(max_file_size      = 500,
                     # Selector for choosing PDFs to combine
                     selectInput("selected_pdfs", "Select Files to Combine (in this order - select / delete files below):", choices = NULL, multiple = TRUE),
 
-                    textInput("save_as_name", label = "(Optional) File Name to Save as...", value = "", placeholder = "Default if not provided: 'updated_pdf_YYYY-MM-DD.pdf'"),
+                    fluidRow(
+                      column(
+                        width = 9,
+                        textInput("save_as_name", label = "(Optional) File Name to Save as...", value = "", placeholder = "Default if not provided: 'updated_pdf_YYYY-MM-DD.pdf'")
+                      ),
+                      column(
+                        width = 3,
+                        div(style = "height: 38px;"),  # Empty div to add space
+                        checkboxInput("compress",
+                                      tagList(
+                                        HTML("&nbsp;Compress"),
+                                        tags$span(
+                                          "?",
+                                          style = "color: blue; cursor: help; font-weight: bold; margin-left: 0px; font-size: 16px;",
+                                          title = "Smart lossless compression, will always return the smallest file (details will be shown on bottom right)."
+                                        )
+                                      ),
+                                      value = TRUE
+                        )
+                      ) # end of column
+                    ), # end of fluidRow
 
                     # Combine button and compress checkbox
                     fluidRow(
@@ -125,16 +147,16 @@ pdfcombiner <- function(max_file_size      = 500,
                       column(
                         width = 3,
                         div(style = "height: 5px;"),  # Empty div to add space
-                        checkboxInput("compress",
+                        checkboxInput("compact",
                                       tagList(
-                                        HTML("&nbsp;Compress"),
+                                        HTML("&nbsp;Compact"),
                                         tags$span(
                                           "?",
                                           style = "color: blue; cursor: help; font-weight: bold; margin-left: 0px; font-size: 16px;",
-                                          title = "Smart lossless compression, will always return the smallest file (details will be shown on bottom right)."
+                                          title = "**LOSSY** compression, i.e. degrades raster image quality (will first compress, then compact)."
                                         )
                                       ),
-                                      value = TRUE
+                                      value = FALSE
                         )
                       ) # end of column
                     ) # end of fluidRow for Combine button
@@ -261,7 +283,7 @@ pdfcombiner <- function(max_file_size      = 500,
                     )
         ),
 
-        tags$p("Author: Steve Choy (v1.9.7)",
+        tags$p("Author: Steve Choy (v1.9.8)",
                a(href = "https://github.com/stevechoy/pdfcombiner", "(GitHub Repo)", target = "_blank"),
                style = "font-size: 0.9em; color: #555; text-align: left;")
       ), # end of sidebar
@@ -295,7 +317,27 @@ pdfcombiner <- function(max_file_size      = 500,
           # Selector for choosing PDFs to combine
           selectInput("selected_pdfs", "Select Files to Combine (in this order - select / delete files below):", choices = NULL, multiple = TRUE),
 
-          textInput("save_as_name", label = "(Optional) File Name to Save as...", value = "", placeholder = "Default if not provided: 'updated_pdf_YYYY-MM-DD.pdf'"),
+          fluidRow(
+            column(
+              width = 9,
+              textInput("save_as_name", label = "(Optional) File Name to Save as...", value = "", placeholder = "Default if not provided: 'updated_pdf_YYYY-MM-DD.pdf'")
+            ),
+            column(
+              width = 3,
+              div(style = "height: 38px;"),  # Empty div to add space
+              checkboxInput("compress",
+                            tagList(
+                              HTML("&nbsp;Compress"),
+                              tags$span(
+                                "?",
+                                style = "color: blue; cursor: help; font-weight: bold; margin-left: 0px; font-size: 16px;",
+                                title = "Smart lossless compression, will always return the smallest file (details will be shown on bottom right)."
+                              )
+                            ),
+                            value = TRUE
+              )
+            ) # end of column
+          ), # end of fluidRow
 
           # Combine button and compress checkbox
           fluidRow(
@@ -310,16 +352,16 @@ pdfcombiner <- function(max_file_size      = 500,
             column(
               width = 3,
               div(style = "height: 5px;"),  # Empty div to add space
-              checkboxInput("compress",
+              checkboxInput("compact",
                             tagList(
-                              HTML("&nbsp;Compress"),
+                              HTML("&nbsp;Compact"),
                               tags$span(
                                 "?",
                                 style = "color: blue; cursor: help; font-weight: bold; margin-left: 0px; font-size: 16px;",
-                                title = "Smart lossless compression, will always return the smallest file (details will be shown on bottom right)."
+                                title = "**LOSSY** compression, i.e. degrades raster image quality (will first compress, then compact)."
                               )
                             ),
-                            value = TRUE
+                            value = FALSE
               )
             ) # end of column
           ), # end of fluidRow for Combine button
@@ -442,7 +484,7 @@ pdfcombiner <- function(max_file_size      = 500,
           ),
 
           br(),
-          tags$p("Author: Steve Choy (v1.9.7)",
+          tags$p("Author: Steve Choy (v1.9.8)",
                  a(href = "https://github.com/stevechoy/PDF_Combiner", "(GitHub Repo)", target = "_blank"),
                  style = "font-size: 0.9em; color: #555; text-align: left;")
         ), # end of sidebarPanel
@@ -876,6 +918,17 @@ pdfcombiner <- function(max_file_size      = 500,
       combined_pdf(tmp_pdf)
     })
 
+    # Always set compress = TRUE when compact = TRUE
+    observeEvent(input$compact, {
+      if (input$compact) {
+        if(Sys.which("gs") == "") {
+          showNotification("Please first install Ghostscript to use the Compact option.", type = "error")
+          updateCheckboxInput(session, "compact", value = FALSE)
+        }
+        updateCheckboxInput(session, "compress", value = TRUE)
+      }
+    })
+
     # Download UI
     output$download_ui <- renderUI({
       shiny::req(combined_pdf())
@@ -911,7 +964,7 @@ pdfcombiner <- function(max_file_size      = 500,
           showNotification(paste0("Watermark (", input$watermark_text, ") applied!"), type = "message")
         }
 
-        if(input$compress) {
+        if(input$compress & !input$compact) {
           compressed_path <- file.path(temp_dir, paste0("compressed_", format(Sys.time(), "%Y%m%d%H%M%S"), ".pdf"))
           showNotification("Compressing PDF File...", type = "message")
           pdf_compress(input = pdf_to_save, output = compressed_path, linearize = FALSE)
@@ -934,7 +987,26 @@ pdfcombiner <- function(max_file_size      = 500,
             showNotification(paste0("Compression resulted in a larger file. Saving uncompressed version instead..."), type = "warning", duration = 10)
             file.copy(pdf_to_save, file)
           }
-
+        } else if (input$compact) {
+          compact_path <- file.path(temp_dir, paste0("compact_", format(Sys.time(), "%Y%m%d%H%M%S"), ".pdf"))
+          # First compress anyway
+          showNotification("Compressing PDF File prior to Compacting...", type = "message")
+          pdf_compress(input = pdf_to_save, output = compact_path, linearize = FALSE)
+          showNotification("Compacting lossy PDF File (could take very long, please wait patiently for download file to trigger)...", type = "message", duration = 20)
+          # Note that we're overwriting the same path of the compressed PDF!
+          tools::compactPDF(paths = compact_path, gs_quality = compact_level) # one of "none", "printer" (300 dpi), "ebook" (150 dpi), "screen" (72 dpi)
+          original_size <- original_file_sizes()
+          compacted_size <- file.info(compact_path)$size / 1024 # Convert bytes to KB
+          space_saved <- original_size - compacted_size
+          percentage_saved <- space_saved / original_size * 100
+          cat("Original size(s):", original_size, "KB\n")
+          cat("Compacted size:", compacted_size, "KB\n")
+          cat("Space saved:", space_saved, "KB\n")
+          cat("Percentage saved:", round(percentage_saved, 2), "%\n")
+          showNotification(paste0("Original size(s): ", round(original_size), " KB, ",
+                                  "Compacted size: ", round(compacted_size), " KB (",
+                                  round(percentage_saved, 2), "% reduction)"), type = "message", duration = 15)
+          file.copy(compact_path, file)
         } else {
           file.copy(pdf_to_save, file)
         }
