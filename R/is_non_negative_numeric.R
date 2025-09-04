@@ -18,7 +18,7 @@
 #'
 #' @keywords internal
 is_non_negative_numeric <- function(x, name_of_func, throw_error = TRUE) {
-  if (is.numeric(x) && length(x) == 1 && x >= 0) {
+  if (is.numeric(x) && length(x) == 1 && !is.na(x) && !is.nan(x) && is.finite(x) && x >= 0) {
     return(TRUE)  # Valid numeric
   } else {
     if (throw_error) {

@@ -20,6 +20,7 @@
 #' @param image_dpi          Dots per inch for use when converting to images
 #' @param compact_level      One of "none" (not used), "printer" (300dpi), "ebook" (150dpi), "screen" (72dpi), only applicable if Ghostscript is installed
 #' @param linearize          Default FALSE. When TRUE, optimizes PDF for web-viewing (loads first page quickly)
+#' @param verbose            Prints out working messages in console
 #'
 #' @details
 #' The user is highly recommended to also install the \link[staplr]{staplr} package as it supports bookmarks, however
@@ -27,7 +28,7 @@
 #' In addition, the \link[magick]{magick} package is recommended for supporting uploading of image files.
 #'
 #' @examples
-#' \dontrun{
+#' if (interactive()) {
 #' pdfcombiner(bootstrap_theme = FALSE) # Do not use bootstrap theme (if `shiny` version is < 1.7.4)
 #' }
 #' @note
@@ -50,7 +51,8 @@ pdfcombiner <- function(max_file_size      = 500,
                         defaultwm_width    = 8.5,
                         image_dpi          = 300,
                         compact_level      = "ebook",
-                        linearize          = FALSE) {
+                        linearize          = FALSE,
+                        verbose            = TRUE) {
 
   # Sanity checks for arguments that should be a non-negative numeric
   is_non_negative_numeric(max_file_size, "max_file_size")
@@ -83,7 +85,7 @@ pdfcombiner <- function(max_file_size      = 500,
 
   # Check if staplr is installed, recommended for handling bookmarks
   if (requireNamespace("staplr", quietly = TRUE)) {
-    #requireNamespace(rJava) # If running this line fails, that means you need to install Java separately
+    requireNamespace("rJava") # If running this line fails, that means you need to install Java separately
     requireNamespace("staplr")
   }
 
@@ -538,11 +540,15 @@ pdfcombiner <- function(max_file_size      = 500,
     # Helper function to combine PDFs
     combine_pdfs <- function(pdf_paths, output_path) {
       original_file_sizes(sum_disk_space(pdf_paths))
-      print(paste("Sum of File Sizes (KB):", original_file_sizes())) # Debugging
+      if(verbose) {
+        message("Sum of File Sizes (KB):", original_file_sizes()) # Debugging
+      }
       # If there's only 1 PDF file, don't do anything to it, just copy it to temp_dir
       if(length(pdf_paths) == 1) {
         file.copy(unlist(pdf_paths), output_path)
-        print(paste("Single File: copying from ", unlist(pdf_paths), " to ", output_path))# Debugging
+        if(verbose) {
+          message("Single File: copying from ", unlist(pdf_paths), " to ", output_path)# Debugging
+        }
       } else {
         # Interesting that when PDFs are read, they are already somehow compressed
         if(package_check("staplr", bookmarks = TRUE)) {
@@ -554,7 +560,9 @@ pdfcombiner <- function(max_file_size      = 500,
       combined_pdf(output_path)
       combined_pdf_nowm(output_path)
       original_pdf(output_path) # Save the original combined PDF
-      print(paste("Combined PDF Path:", output_path)) # Debugging: Print combined PDF path
+      if(verbose) {
+        message("Combined PDF Path:", output_path) # Debugging: Print combined PDF path
+      }
     }
 
     # Observe file upload
@@ -609,7 +617,9 @@ pdfcombiner <- function(max_file_size      = 500,
       combine_pdfs(current_pdfs, file.path(temp_dir, paste0("combined_", format(Sys.time(), "%Y%m%d%H%M%S"), ".pdf")))
 
       # Debugging: Print uploaded PDFs
-      print(paste("Uploaded PDFs:", paste(names(current_pdfs), collapse = ", ")))
+      if(verbose) {
+        message("Uploaded PDFs:", paste(names(current_pdfs), collapse = ", "))
+      }
     })
 
     # Combine selected PDFs
@@ -666,7 +676,9 @@ pdfcombiner <- function(max_file_size      = 500,
       pages <- parse_pages_to_remove(input_pages)
 
       # Debugging: Print pages
-      print(paste("Pages to ", action, ":", paste(pages, collapse = ", ")))
+      if(verbose) {
+        message("Pages to ", action, ":", paste(pages, collapse = ", "))
+      }
 
       # Read the combined PDF
       total_pages <- pdf_info(input_pdf_path)$pages
@@ -705,7 +717,9 @@ pdfcombiner <- function(max_file_size      = 500,
       combined_pdf_nowm(updated_pdf_path)
 
       # Debugging: Print updated PDF path
-      print(paste("Updated PDF Path:", updated_pdf_path))
+      if(verbose) {
+        message("Updated PDF Path:", updated_pdf_path)
+      }
       showNotification(
         switch(
           action,
@@ -733,7 +747,9 @@ pdfcombiner <- function(max_file_size      = 500,
       pages_to_rotate <- parse_pages_to_remove(input$rotate_pages)
 
       # Debugging: Print pages to remove
-      print(paste("Pages to Rotate:", paste(pages_to_rotate, collapse = ", ")))
+      if(verbose) {
+        message("Pages to Rotate:", paste(pages_to_rotate, collapse = ", "))
+      }
 
       # Read the combined PDF
       pdf_path <- combined_pdf()
@@ -758,7 +774,7 @@ pdfcombiner <- function(max_file_size      = 500,
       #   if (new_angle < 0) new_angle <- new_angle + 360  # Handle negative values
       #   rotation_angle(new_angle)
       #   # Debugging: Print Rotation angle
-      #   print(paste("Rotation angle:", rotation_angle()))
+      #   message("Rotation angle:", rotation_angle())
       #   staplr::rotate_pages(rotatepages = pages_to_rotate, page_rotation = rotation_angle(), input_filepath = pdf_path, output_filepath = updated_pdf_path)
       # } else {
       #requireNamespace("qpdf") # "qpdf" is an Import from pdftools
@@ -768,7 +784,9 @@ pdfcombiner <- function(max_file_size      = 500,
       combined_pdf_nowm(updated_pdf_path)  # Update the combined PDF without watermarks
 
       # Debugging: Print updated PDF path
-      print(paste("Updated PDF Path:", updated_pdf_path))
+      if(verbose) {
+        message("Updated PDF Path:", updated_pdf_path)
+      }
       showNotification("Pages rotated successfully!", type = "message")
     })
 
@@ -976,10 +994,12 @@ pdfcombiner <- function(max_file_size      = 500,
           compressed_size <- file.info(compressed_path)$size / 1024 # Convert bytes to KB
           space_saved <- original_size - compressed_size
           percentage_saved <- space_saved / original_size * 100
-          cat("Original size(s):", original_size, "KB\n")
-          cat("Compressed size:", compressed_size, "KB\n")
-          cat("Space saved:", space_saved, "KB\n")
-          cat("Percentage saved:", round(percentage_saved, 2), "%\n")
+          if(verbose) {
+            message("Original size(s):", original_size, "KB\n")
+            message("Compressed size:", compressed_size, "KB\n")
+            message("Space saved:", space_saved, "KB\n")
+            message("Percentage saved:", round(percentage_saved, 2), "%\n")
+          }
           showNotification(paste0("Original size(s): ", round(original_size), " KB, ",
                                   "Compressed size: ", round(compressed_size), " KB (",
                                   round(percentage_saved, 2), "% reduction)"), type = "message", duration = 15)
@@ -1001,10 +1021,12 @@ pdfcombiner <- function(max_file_size      = 500,
           compacted_size <- file.info(compact_path)$size / 1024 # Convert bytes to KB
           space_saved <- original_size - compacted_size
           percentage_saved <- space_saved / original_size * 100
-          cat("Original size(s):", original_size, "KB\n")
-          cat("Compacted size:", compacted_size, "KB\n")
-          cat("Space saved:", space_saved, "KB\n")
-          cat("Percentage saved:", round(percentage_saved, 2), "%\n")
+          if(verbose) {
+            message("Original size(s):", original_size, "KB\n")
+            message("Compacted size:", compacted_size, "KB\n")
+            message("Space saved:", space_saved, "KB\n")
+            message("Percentage saved:", round(percentage_saved, 2), "%\n")
+          }
           showNotification(paste0("Original size(s): ", round(original_size), " KB, ",
                                   "Compacted size: ", round(compacted_size), " KB (",
                                   round(percentage_saved, 2), "% reduction)"), type = "message", duration = 15)

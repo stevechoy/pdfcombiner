@@ -17,10 +17,14 @@ Imports:
     shiny,
     pdftools,
     qpdf,
-Suggests: bslib,
-          staplr,
-          magick,
-          officer,
-          openxlsx,
-          shinythemes
+Suggests: 
+    bslib,
+    rJava,
+    staplr,
+    testthat (>= 3.0.0),
+    magick,
+    officer,
+    openxlsx,
+    shinythemes
 Depends: R (>= 3.5.0)
+Config/testthat/edition: 3

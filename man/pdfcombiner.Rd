@@ -17,7 +17,8 @@ pdfcombiner(
   defaultwm_width = 8.5,
   image_dpi = 300,
   compact_level = "ebook",
-  linearize = FALSE
+  linearize = FALSE,
+  verbose = TRUE
 )
 }
 \arguments{
@@ -46,6 +47,8 @@ pdfcombiner(
 \item{compact_level}{One of "none" (not used), "printer" (300dpi), "ebook" (150dpi), "screen" (72dpi), only applicable if Ghostscript is installed}
 
 \item{linearize}{Default FALSE. When TRUE, optimizes PDF for web-viewing (loads first page quickly)}
+
+\item{verbose}{Prints out working messages in console}
 }
 \value{
 a Shiny App
@@ -65,7 +68,7 @@ In addition, the \link[magick]{magick} package is recommended for supporting upl
 All PDF files are stored locally in a per-session temporary directory, given by the \code{tempdir()} function.
 }
 \examples{
-\dontrun{
+if (interactive()) {
 pdfcombiner(bootstrap_theme = FALSE) # Do not use bootstrap theme (if `shiny` version is < 1.7.4)
 }
 }

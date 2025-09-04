@@ -38,7 +38,10 @@ watermark_stamp <- function(input_pdf,
   }
 
   if (!validate_color(watermark_col)) {
-    showNotification(paste0("Provided color is not valid. Using the default color (", fallback_col, ") instead."), type = "error")
+    if (interactive() && requireNamespace("shiny", quietly = TRUE)) {
+      showNotification(paste0("Provided color is not valid. Using the default color (", fallback_col, ") instead."), type = "error")
+    }
+
     watermark_col <- fallback_col
   }
 
