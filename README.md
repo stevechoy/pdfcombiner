@@ -3,6 +3,7 @@
 
 <!-- badges: start -->
 [![R-CMD-check](https://github.com/stevechoy/pdfcombiner/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/stevechoy/pdfcombiner/actions/workflows/R-CMD-check.yaml)
+[![CRAN status](https://www.r-pkg.org/badges/version/pdfcombiner)](https://CRAN.R-project.org/package=pdfcombiner)
 <!-- badges: end -->
 
 ## Overview
@@ -26,17 +27,15 @@ PDF Combiner aims to fill a niche where R users with *restricted* permissions (i
 
 ## Installation
 
-You can install the latest development version from GitHub: 
+You can install `{pdfcombiner}` from CRAN: 
 
 ``` r
+install.packages(pdfcombiner)
+
+## Alternatively, install the latest development version from GitHub:
 ## Install devtools first if required
 # install.packages(devtools)
-
-devtools::install_github("stevechoy/pdfcombiner")
-
-## Pending CRAN submission
-# install.packages(pdfcombiner)
-
+# devtools::install_github("stevechoy/pdfcombiner")
 ```
 
 For advanced users, you may run PDF Combiner locally *without* installing it as a package (i.e. launch the App directly from R console), as long as you have the following packages:  
