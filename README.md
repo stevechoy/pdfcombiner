@@ -4,6 +4,8 @@
 <!-- badges: start -->
 [![R-CMD-check](https://github.com/stevechoy/pdfcombiner/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/stevechoy/pdfcombiner/actions/workflows/R-CMD-check.yaml)
 [![CRAN status](https://www.r-pkg.org/badges/version/pdfcombiner)](https://CRAN.R-project.org/package=pdfcombiner)
+[![CRAN downloads](https://cranlogs.r-pkg.org/badges/pdfcombiner)](https://cran.r-project.org/package=pdfcombiner)
+[![CRAN downloads total](https://cranlogs.r-pkg.org/badges/grand-total/pdfcombiner)](https://cran.r-project.org/package=pdfcombiner)
 <!-- badges: end -->
 
 ## Overview
