@@ -32,7 +32,7 @@ PDF Combiner aims to fill a niche where R users with *restricted* permissions (i
 You can install `{pdfcombiner}` from CRAN: 
 
 ``` r
-install.packages("pdfcombiner"")
+install.packages("pdfcombiner")
 
 ## Alternatively, install the latest development version from GitHub:
 ## Install devtools first if required
