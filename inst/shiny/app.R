@@ -1,9 +1,9 @@
-## This is the standalone version of PDF Combiner (v1.9.8), provided ONLY for convenience
+## This is the standalone version of PDF Combiner (v1.9.9), provided ONLY for convenience
 ## when the user would like to launch from R console.
 ##
 ## This is only available on GitHub and not part of the `pdfcombiner` R package, therefore it may be outdated.
 ## The user is **recommended** to install the latest development version where possible,
-## i.e. with `devtools::install_github("stevechoy/pdfcombiner")`
+## i.e. with `pak::pak("stevechoy/pdfcombiner")`
 
 max_file_size      <- 500 # max file size in MB, change if needed
 bootstrap_theme    <- TRUE # When TRUE, uses bslib bootstrap theme to allow minimizing sidebar
@@ -36,6 +36,15 @@ if (requireNamespace("staplr", quietly = TRUE)) {
   library(rJava) # If running this line fails, that means you need to install Java separately
   library(staplr)
 }
+
+# Shared browser tab title + favicon
+app_head <- tags$head(
+  tags$title("PDF Combiner")#,
+  #tags$link(rel = "icon", type = "image/png", href = "favicon-16x16.png")
+)
+
+# Shared in-app title with GSK logo
+app_title_block <- tags$span("PDF Combiner", style = "font-size: 20px; font-weight: bold;")
 
 ### Functions ##################################################################
 
@@ -113,43 +122,54 @@ convert_to_powerpoint <- function(pdf_path, output_path) {
 }
 
 convert_to_images <- function(pdf_path, output_dir, dpi = 300) {
-  # Read the PDF as an image object
-  setProgress(value = 0.3, detail = paste0("Reading as images"))
-  pdf_images <- magick::image_read_pdf(pdf_path, density = dpi)
+  # Fresh, empty working folder for this conversion only, so nothing from an
+  # earlier conversion in the same session (old zip, old pages) can leak in
+  work_dir <- tempfile(pattern = "pngs_", tmpdir = output_dir)
+  dir.create(work_dir)
 
-  # Get the total number of pages
-  total_pages <- length(pdf_images)
+  # Get the total number of pages without rasterizing anything
+  total_pages <- pdftools::pdf_info(pdf_path)$pages
 
   # Initialize a vector to store the paths of the PNG files
-  png_files <- c()
+  png_files <- character(0)
 
-  # Loop through each page and save it as a PNG file
+  # Render one page at a time so only a single page is held in the pixel cache
   for (i in seq_len(total_pages)) {
-    setProgress(value = 0.5, detail = paste0("Saving page ", i , "/", total_pages))
-    # Extract the current page as an image
-    page_image <- pdf_images[i]
+    shiny::setProgress(value = 0.3 + 0.4 * i / total_pages,
+                       detail = paste0("Saving page ", i, "/", total_pages))
 
-    # Define the output file path
-    png_path <- file.path(output_dir, paste0("page_", i, ".png"))
+    # Read just this page from the PDF
+    page_image <- magick::image_read_pdf(pdf_path, pages = i, density = dpi)
 
-    # Save the image as a PNG file
+    # Define the output file path and save the page as a PNG file
+    png_path <- file.path(work_dir, paste0("page_", i, ".png"))
     magick::image_write(page_image, path = png_path, format = "png")
     png_files <- c(png_files, png_path)
+
+    # Release the page before reading the next one
+    rm(page_image)
+    gc()
   }
 
-  # If there are multiple pages, compress them into a ZIP file
   if (length(png_files) > 1) {
-    zip_path <- file.path(output_dir, "images.zip")
-    setProgress(value = 0.7, detail = paste0("Compressing into .zip"))
-    utils::zip(zipfile = zip_path, files = png_files)
+    # Multiple pages: compress into a ZIP file
+    zip_path <- file.path(work_dir, "images.zip")
+    shiny::setProgress(value = 0.7, detail = "Compressing into .zip")
+
+    # Zip from inside work_dir using bare file names, so the archive
+    # contains the .png files at the top level (no folder structure)
+    old_wd <- setwd(work_dir)
+    on.exit(setwd(old_wd), add = TRUE)
+    utils::zip(zipfile = zip_path, files = basename(png_files))
+
     return(zip_path)
   } else if (length(png_files) == 1) {
-    return(png_files[1])  # Return single PNG file if only one page
+    # Single page: return the PNG directly, no zip
+    return(png_files[1])
   } else {
     stop("No pages were successfully converted to images.")
   }
 }
-
 
 parse_pages_to_remove <- function(input_string) {
   parts <- unlist(strsplit(input_string, ",")) # Split by commas
@@ -271,223 +291,257 @@ is_non_negative_numeric <- function(x, name_of_func, throw_error = TRUE) {
   }
 }
 
+image_to_pdf <- function(img_path, pdf_path, dpi = 72) {
+  frames <- magick::image_read(img_path)          # may have >1 frame (gif/tiff)
+  frame_pdfs <- character(length(frames))
+
+  for (k in seq_along(frames)) {
+    fr <- magick::image_flatten(
+      magick::image_background(frames[k], "white"), "Over")   # remove alpha
+    info <- magick::image_info(fr)
+    ras  <- as.raster(fr)
+
+    frame_pdfs[k] <- tempfile(fileext = ".pdf")
+    grDevices::pdf(frame_pdfs[k], width = info$width / dpi, height = info$height / dpi)
+    grid::grid.newpage()
+    grid::grid.raster(ras, interpolate = FALSE, width = 1, height = 1)
+    grDevices::dev.off()
+  }
+
+  if (length(frame_pdfs) == 1) {
+    file.copy(frame_pdfs, pdf_path, overwrite = TRUE)
+  } else {
+    qpdf::pdf_combine(frame_pdfs, output = pdf_path)
+  }
+  pdf_path
+}
+
+format_kb <- function(x) {
+  formatC(x, format = "f", digits = 0, big.mark = ",")
+}
+
 ### Shiny App ##################################################################
 
 # UI
 ui <- if (requireNamespace("bslib", quietly = TRUE) && bootstrap_theme && packageVersion("shiny") >= "1.7.4") { # Loads a bootstrap UI if bslib is installed
   requireNamespace("bslib")
-  bslib::page_sidebar(
-    theme = bslib::bs_theme(version = 5, # Use Bootstrap 5
-                            preset = "flatly", # cerulean
-                            font_scale = 1),
-    sidebar = bslib::sidebar(
-      width = sidebar_width,
-      title = tags$span("PDF Combiner", style = "font-size: 20px; font-weight: bold;"), # Title text styling
-      p("1. Upload PDF or Image file(s). All files will be combined automatically by default."),
-      p("2. Use the file selector to choose which files to include, and click the 'Update / Combine PDF' button (delete unwanted files, order matters)."),
-      p("3. Verify changes on the right and download the updated PDF."),
-      p(HTML("<strong>Note:</strong> You can also apply any optional features below, <em>before</em> downloading the updated PDF.")),
-
-      bslib::card(class ="shadow border-primary",
-                  bslib::card_header("Input Files"),
-                  if (requireNamespace("magick", quietly = TRUE)) {
-                    fileInput("pdf_files", paste0("Upload PDF or Image File(s): [Max ", max_file_size, " MB]"), multiple = TRUE,
-                              accept = magick_formats)
-                  } else {
-                    fileInput("pdf_files", paste0("Upload PDF File(s): [Max ", max_file_size, " MB]"), multiple = TRUE, accept = ".pdf")  # Allow multiple file uploads
-                  },
-
-                  # Selector for choosing PDFs to combine
-                  selectInput("selected_pdfs", "Select Files to Combine (in this order - select / delete files below):", choices = NULL, multiple = TRUE),
-
-                  fluidRow(
-                    column(
-                      width = 9,
-                      textInput("save_as_name", label = "(Optional) File Name to Save as...", value = "", placeholder = "Default if not provided: 'updated_pdf_YYYY-MM-DD.pdf'")
-                    ),
-                    column(
-                      width = 3,
-                      div(style = "height: 38px;"),  # Empty div to add space
-                      checkboxInput("compress",
-                                    tagList(
-                                      HTML("&nbsp;Compress"),
-                                      tags$span(
-                                        "?",
-                                        style = "color: blue; cursor: help; font-weight: bold; margin-left: 0px; font-size: 16px;",
-                                        title = "Smart lossless compression, will always return the smallest file (details will be shown on bottom right)."
-                                      )
-                                    ),
-                                    value = TRUE
-                      )
-                    ) # end of column
-                  ), # end of fluidRow
-
-                  # Combine button and compress checkbox
-                  fluidRow(
-                    column(
-                      width = 4,
-                      actionButton("combine_btn", "Update / Combine PDF", style = "width: 100%; margin-top: 0px;")
-                    ),
-                    column(
-                      width = 5,
-                      uiOutput("download_ui")
-                    ),
-                    column(
-                      width = 3,
-                      div(style = "height: 5px;"),  # Empty div to add space
-                      checkboxInput("compact",
-                                    tagList(
-                                      HTML("&nbsp;Compact"),
-                                      tags$span(
-                                        "?",
-                                        style = "color: blue; cursor: help; font-weight: bold; margin-left: 0px; font-size: 16px;",
-                                        title = "**LOSSY** compression, i.e. degrades raster image quality (will first compress, then compact)."
-                                      )
-                                    ),
-                                    value = FALSE
-                      )
-                    ) # end of column
-                  ) # end of fluidRow for Combine button
-      ), # end of card
-
-      bslib::card(class ="shadow",
-                  bslib::card_header("Page Editor"),
-                  # Custom text with inline question mark tooltip
-                  tags$div(
-                    style = "display: flex; align-items: center;",  # Align label and input inline
-                    tags$label(
-                      "Enter (Current) Page Numbers to Remove / Select: ",
-                      tags$span(
-                        "?",
-                        style = "color: blue; cursor: help; font-weight: bold; margin-left: 5px; font-size: 20px;",
-                        title = "Note: Bookmarks will not be retained when pages are removed or selected."
-                      )
-                    )
-                  ),
-
-                  # Page removal input
-                  textInput("remove_pages", label = NULL, value = "", placeholder = page_placeholder_text), # Input without default label
-
-                  # Buttons side by side with 20px gap
-                  div(
-                    style = "display: flex; align-items: center; gap: 20px;",
-                    actionButton("remove_pages_btn",
-                                 label = tagList(icon("xmark", class = "fa-lg"), "Remove Pages")),  # Remove Pages button with xmark icon
-                    actionButton("select_pages_btn",
-                                 label = tagList(icon("check", class = "fa-lg"), "Select Pages")),  # Select Pages button with check icon
-                    actionButton("reset_btn",
-                                 label = tagList(icon("sync-alt", class = "fa-lg"), "Reset"))  # Reset button with refresh icon
-                  ),
-
-                  #tags$hr(style = "border: 2px solid #ccc;"), # Grey divider line
-
-                  # Custom text with inline question mark tooltip
-                  tags$div(
-                    style = "display: flex; align-items: center;",  # Align label and input inline
-                    tags$label(
-                      "Enter (Current) Page Numbers to Rotate: ",
-                      tags$span(
-                        "?",
-                        style = "color: blue; cursor: help; font-weight: bold; margin-left: 5px; font-size: 20px;",
-                        title = "Note: Bookmarks will not be retained when pages are rotated."
-                      )
-                    )
-                  ),
-
-                  # Page rotate input
-                  textInput("rotate_pages", label = NULL, value = "", placeholder = page_placeholder_text),
-
-                  # Buttons side by side with 20px gap
-                  div(
-                    style = "display: flex; align-items: center; gap: 20px;",
-                    actionButton("rotate_pages_btn",
-                                 label = tagList(icon("rotate-left", class = "fa-lg"), "Rotate Pages (90\u00B0 counterclockwise)")),  # Remove Pages button with xmark icon
-                    actionButton("reset_btn_rot",
-                                 label = tagList(icon("sync-alt", class = "fa-lg"), "Reset"))#,  # Reset button with refresh icon
-                  ),
-
-                  # Insert Watermark with inline question mark tooltip
-                  tags$div(
-                    style = "display: flex; align-items: center;",  # Align label and input inline
-                    tags$label(
-                      "(Optional) Watermark Stamp: ",
-                      tags$span(
-                        "?",
-                        style = "color: blue; cursor: help; font-weight: bold; margin-left: 5px; font-size: 20px;",
-                        title = "Applies a see-through text across all pages of the PDF when downloaded."
-                      )
-                    )
-                  ),
-
-                  # Watermark input and settings
-                  fluidRow(
-                    column(9, textInput("watermark_text", label = NULL, placeholder = "e.g. 'For Internal Use Only'")),
-                    column(1, actionButton("customize_watermark", label = NULL, icon = icon("gear"), class = "btn-secondary")),
-                    column(2, actionButton("render_preview2", label = NULL, icon = icon("play"), class = "btn-primary")),
-                  ),
-
-      ), # end of card
-
-      bslib::card(class = "shadow",
-                  bslib::card_header("Remove Password Protection"),
-
-                  # Custom text with inline question mark tooltip
-                  tags$div(
-                    style = "display: flex; align-items: center;",  # Align label and input inline
-                    tags$label(
-                      paste0("Upload Password-protected PDF File: [Max ", max_file_size, " MB]"),
-                      tags$span(
-                        "?",
-                        style = "color: blue; cursor: help; font-weight: bold; margin-left: 5px; font-size: 20px;",
-                        title = "Note: Bookmarks will not be retained when PDFs are unlocked."
-                      )
-                    )
-                  ),
-
-                  fileInput("locked_pdf", label = NULL, multiple = FALSE, accept = ".pdf"),
-                  textInput("password", label = "Password:", value = "", placeholder = "Enter password here"),
-                  div(
-                    style = "display: flex; align-items: center; gap: 20px;", # Flexbox layout with 20px gap
-                    actionButton("unlock_btn",
-                                 label = tagList(icon("lock-open", class = "fa-lg"), "Unlock PDF")), # Unlock button
-                    uiOutput("download_unlocked_ui")                        # UI for downloading unlocked file
-                  )
+  tagList(
+    app_head,
+    bslib::page_sidebar(
+      theme = bslib::bs_theme(
+        version = 5,
+        preset = "flatly",
+        font_scale = 1
       ),
+      sidebar = bslib::sidebar(
+        width = sidebar_width,
+        title = app_title_block,
+        p("1. Upload PDF or Image file(s). All files will be combined automatically by default."),
+        p("2. Use the file selector to choose which files to include, and click the 'Update / Combine PDF' button (delete unwanted files, order matters)."),
+        p("3. Verify changes on the right and download the updated PDF."),
+        p(HTML("<strong>Note:</strong> You can also apply any optional features below, <em>before</em> downloading the updated PDF.")),
 
-      bslib::card(class = "bg-light shadow",
-                  bslib::card_header("PDF Conversion"),
-                  # Dropdown for selecting output format
-                  selectInput(
-                    "convert_format",
-                    "(Experimental) Convert Updated PDF to:",
-                    choices = c("Word (.docx)", "Excel (.xlsx)", "PowerPoint (.pptx)", "Images (.png as a zip file)"),
-                    selected = "Word (.docx)"
-                  ),
+        bslib::card(class ="shadow border-primary",
+                    bslib::card_header("Input Files"),
+                    if (requireNamespace("magick", quietly = TRUE)) {
+                      fileInput("pdf_files", paste0("Upload PDF or Image File(s): [Max ", max_file_size, " MB]"), multiple = TRUE,
+                                accept = magick_formats)
+                    } else {
+                      fileInput("pdf_files", paste0("Upload PDF File(s): [Max ", max_file_size, " MB]"), multiple = TRUE, accept = ".pdf")  # Allow multiple file uploads
+                    },
 
-                  div(
-                    style = "display: flex; align-items: center; gap: 20px;", # Flexbox layout with 20px gap
-                    actionButton("convert_btn", "Convert PDF"),               # Conversion button
-                    uiOutput("download_conversion_ui")                        # UI for downloading converted file
-                  )
-      ),
+                    # Selector for choosing PDFs to combine
+                    selectInput("selected_pdfs", "Select Files to Combine (in this order - select / delete files below):", choices = NULL, multiple = TRUE),
 
-      tags$p("Author: Steve Choy (v1.9.8)",
-             a(href = "https://github.com/stevechoy/pdfcombiner", "(GitHub Repo)", target = "_blank"),
-             style = "font-size: 0.9em; color: #555; text-align: left;")
-    ), # end of sidebar
+                    fluidRow(
+                      column(
+                        width = 9,
+                        textInput("save_as_name", label = "(Optional) File Name to Save as...", value = "", placeholder = "Default if not provided: 'YYYY-MM-DD_updated_pdf.pdf'")
+                      ),
+                      column(
+                        width = 3,
+                        div(style = "height: 38px;"),  # Empty div to add space
+                        checkboxInput("compress",
+                                      tagList(
+                                        HTML("&nbsp;Compress"),
+                                        tags$span(
+                                          "?",
+                                          style = "color: blue; cursor: help; font-weight: bold; margin-left: 0px; font-size: 16px;",
+                                          title = "Smart lossless compression, will always return the smallest file (details will be shown on bottom right)."
+                                        )
+                                      ),
+                                      value = TRUE
+                        )
+                      ) # end of column
+                    ), # end of fluidRow
 
-    htmlOutput("pdfviewer")  # Embedded PDF viewer
-  ) # end of page_sidebar
+                    # Combine button and compress checkbox
+                    fluidRow(
+                      column(
+                        width = 4,
+                        actionButton("combine_btn", "Update / Combine PDF", style = "width: 100%; margin-top: 0px;")
+                      ),
+                      column(
+                        width = 5,
+                        uiOutput("download_ui")
+                      ),
+                      column(
+                        width = 3,
+                        div(style = "height: 5px;"),  # Empty div to add space
+                        checkboxInput("compact",
+                                      tagList(
+                                        HTML("&nbsp;Compact"),
+                                        tags$span(
+                                          "?",
+                                          style = "color: blue; cursor: help; font-weight: bold; margin-left: 0px; font-size: 16px;",
+                                          title = "**LOSSY** compression, i.e. degrades raster image quality (will first compress, then compact)."
+                                        )
+                                      ),
+                                      value = FALSE
+                        )
+                      ) # end of column
+                    ) # end of fluidRow for Combine button
+        ), # end of card
+
+        bslib::card(class ="shadow",
+                    bslib::card_header("Page Editor"),
+                    # Custom text with inline question mark tooltip
+                    tags$div(
+                      style = "display: flex; align-items: center;",  # Align label and input inline
+                      tags$label(
+                        "Enter (Current) Page Numbers to Remove / Select: ",
+                        tags$span(
+                          "?",
+                          style = "color: blue; cursor: help; font-weight: bold; margin-left: 5px; font-size: 20px;",
+                          title = "Note: Bookmarks will not be retained when pages are removed or selected."
+                        )
+                      )
+                    ),
+
+                    # Page removal input
+                    textInput("remove_pages", label = NULL, value = "", placeholder = page_placeholder_text), # Input without default label
+
+                    # Buttons side by side with 20px gap
+                    div(
+                      style = "display: flex; align-items: center; gap: 20px;",
+                      actionButton("remove_pages_btn",
+                                   label = tagList(icon("xmark", class = "fa-lg"), "Remove Pages")),  # Remove Pages button with xmark icon
+                      actionButton("select_pages_btn",
+                                   label = tagList(icon("check", class = "fa-lg"), "Select Pages")),  # Select Pages button with check icon
+                      actionButton("reset_btn",
+                                   label = tagList(icon("sync-alt", class = "fa-lg"), "Reset"))  # Reset button with refresh icon
+                    ),
+
+                    #tags$hr(style = "border: 2px solid #ccc;"), # Grey divider line
+
+                    # Custom text with inline question mark tooltip
+                    tags$div(
+                      style = "display: flex; align-items: center;",  # Align label and input inline
+                      tags$label(
+                        "Enter (Current) Page Numbers to Rotate: ",
+                        tags$span(
+                          "?",
+                          style = "color: blue; cursor: help; font-weight: bold; margin-left: 5px; font-size: 20px;",
+                          title = "Note: Bookmarks will not be retained when pages are rotated."
+                        )
+                      )
+                    ),
+
+                    # Page rotate input
+                    textInput("rotate_pages", label = NULL, value = "", placeholder = page_placeholder_text),
+
+                    # Buttons side by side with 20px gap
+                    div(
+                      style = "display: flex; align-items: center; gap: 20px;",
+                      actionButton("rotate_pages_btn",
+                                   label = tagList(icon("rotate-left", class = "fa-lg"), "Rotate Pages (90\u00B0 counterclockwise)")),  # Remove Pages button with xmark icon
+                      actionButton("reset_btn_rot",
+                                   label = tagList(icon("sync-alt", class = "fa-lg"), "Reset"))#,  # Reset button with refresh icon
+                    ),
+
+                    # Insert Watermark with inline question mark tooltip
+                    tags$div(
+                      style = "display: flex; align-items: center;",  # Align label and input inline
+                      tags$label(
+                        "(Optional) Watermark Stamp: ",
+                        tags$span(
+                          "?",
+                          style = "color: blue; cursor: help; font-weight: bold; margin-left: 5px; font-size: 20px;",
+                          title = "Applies a see-through text across all pages of the PDF when downloaded."
+                        )
+                      )
+                    ),
+
+                    # Watermark input and settings
+                    fluidRow(
+                      column(9, textInput("watermark_text", label = NULL, placeholder = "e.g. 'For Internal Use Only'")),
+                      column(1, actionButton("customize_watermark", label = NULL, icon = icon("gear"), class = "btn-secondary")),
+                      column(2, actionButton("render_preview2", label = NULL, icon = icon("play"), class = "btn-primary")),
+                    ),
+
+        ), # end of card
+
+        bslib::card(class = "shadow",
+                    bslib::card_header("Remove Password Protection"),
+
+                    # Custom text with inline question mark tooltip
+                    tags$div(
+                      style = "display: flex; align-items: center;",  # Align label and input inline
+                      tags$label(
+                        paste0("Upload Password-protected PDF File: [Max ", max_file_size, " MB]"),
+                        tags$span(
+                          "?",
+                          style = "color: blue; cursor: help; font-weight: bold; margin-left: 5px; font-size: 20px;",
+                          title = "Note: Bookmarks will not be retained when PDFs are unlocked."
+                        )
+                      )
+                    ),
+
+                    fileInput("locked_pdf", label = NULL, multiple = FALSE, accept = ".pdf"),
+                    textInput("password", label = "Password:", value = "", placeholder = "Enter password here"),
+                    div(
+                      style = "display: flex; align-items: center; gap: 20px;", # Flexbox layout with 20px gap
+                      actionButton("unlock_btn",
+                                   label = tagList(icon("lock-open", class = "fa-lg"), "Unlock PDF")), # Unlock button
+                      uiOutput("download_unlocked_ui")                        # UI for downloading unlocked file
+                    )
+        ),
+
+        bslib::card(class = "bg-light shadow",
+                    bslib::card_header("PDF Conversion"),
+                    # Dropdown for selecting output format
+                    selectInput(
+                      "convert_format",
+                      "(Experimental) Convert Updated PDF to:",
+                      choices = c("Word (.docx)", "Excel (.xlsx)", "PowerPoint (.pptx)", "Images (.png in a zip file)"),
+                      selected = "Word (.docx)"
+                    ),
+
+                    div(
+                      style = "display: flex; align-items: center; gap: 20px;", # Flexbox layout with 20px gap
+                      actionButton("convert_btn", "Convert PDF"),               # Conversion button
+                      uiOutput("download_conversion_ui")                        # UI for downloading converted file
+                    )
+        ),
+
+        tags$p("Author: Steve Choy (v1.9.9)",
+               a(href = "https://github.com/stevechoy/pdfcombiner", "(GitHub Repo)", target = "_blank"),
+               style = "font-size: 0.9em; color: #555; text-align: left;")
+      ), # end of sidebar
+
+      htmlOutput("pdfviewer")  # Embedded PDF viewer
+    ) # end of page_sidebar
+  ) # end of tagList
 
 } else { # if not using Bootstrap theme, then use regular sidebar
   fluidPage(
     theme = app_theme,
-    tags$head(tags$title("PDF Combiner")),
+    app_head,
 
     sidebarLayout(
       sidebarPanel(
         width = 5,
-        tags$span("PDF Combiner", style = "font-size: 20px; font-weight: bold;"), # Title text styling
+        app_title_block, #tags$span("PDF Combiner", style = "font-size: 20px; font-weight: bold;"), # Title text styling
         br(),br(),
         p("1. Upload PDF or Image file(s). All files will be combined automatically by default."),
         p("2. Use the file selector to choose which files to include, and click the 'Update / Combine PDF' button (delete unwanted files, order matters)."),
@@ -508,7 +562,7 @@ ui <- if (requireNamespace("bslib", quietly = TRUE) && bootstrap_theme && packag
         fluidRow(
           column(
             width = 9,
-            textInput("save_as_name", label = "(Optional) File Name to Save as...", value = "", placeholder = "Default if not provided: 'updated_pdf_YYYY-MM-DD.pdf'")
+            textInput("save_as_name", label = "(Optional) File Name to Save as...", value = "", placeholder = "Default if not provided: 'YYYY-MM-DD_updated_pdf.pdf'")
           ),
           column(
             width = 3,
@@ -661,7 +715,7 @@ ui <- if (requireNamespace("bslib", quietly = TRUE) && bootstrap_theme && packag
         selectInput(
           "convert_format",
           "(Experimental) Convert Updated PDF to:",
-          choices = c("Word (.docx)", "Excel (.xlsx)", "PowerPoint (.pptx)", "Images (.png as a zip file)"),
+          choices = c("Word (.docx)", "Excel (.xlsx)", "PowerPoint (.pptx)", "Images (.png in a zip file)"),
           selected = "Word (.docx)"
         ),
 
@@ -672,7 +726,7 @@ ui <- if (requireNamespace("bslib", quietly = TRUE) && bootstrap_theme && packag
         ),
 
         br(),
-        tags$p("Author: Steve Choy (v1.9.8)",
+        tags$p("Author: Steve Choy (v1.9.9)",
                a(href = "https://github.com/stevechoy/PDF_Combiner", "(GitHub Repo)", target = "_blank"),
                style = "font-size: 0.9em; color: #555; text-align: left;")
       ), # end of sidebarPanel
@@ -724,7 +778,7 @@ server <- function(input, output, session) {
   # Helper function to combine PDFs
   combine_pdfs <- function(pdf_paths, output_path) {
     original_file_sizes(sum_disk_space(pdf_paths))
-    print(paste("Sum of File Sizes (KB):", original_file_sizes())) # Debugging
+    print(paste("Sum of File Sizes (KB):", format_kb(original_file_sizes()))) # Debugging
     # If there's only 1 PDF file, don't do anything to it, just copy it to temp_dir
     if(length(pdf_paths) == 1) {
       file.copy(unlist(pdf_paths), output_path)
@@ -770,7 +824,8 @@ server <- function(input, output, session) {
           } else {
             img <- magick::image_read(file_path)  # Read the image
             new_path <- file.path(temp_dir, paste0("converted_image_", i, "_", format(Sys.time(), "%Y%m%d%H%M%S"), ".pdf"))
-            magick::image_write(img, path = new_path, format = "pdf")  # Write the image as a PDF
+            #magick::image_write(img, path = new_path, format = "pdf")  # Write the image as a PDF
+            image_to_pdf(file_path, new_path, dpi = 150) # Would 72 be too big?
             current_pdfs[[file_name]] <- new_path
             #file.remove(file_path) # Delete original image file
           }
@@ -1126,9 +1181,9 @@ server <- function(input, output, session) {
   output$download <- downloadHandler(
     # Dynamically set the file name
     filename = function() {
-      # Use the user-provided name, or default to "updated_pdf_YYYY-MM-DD.pdf" if empty
-      if (input$save_as_name == "" | is.null(input$save_as_name)) {
-        paste0("updated_pdf_", Sys.Date(), ".pdf")
+      # Use the user-provided name, or default to "YYYY-MM-DD_updated_pdf.pdf" if empty
+      if (is.null(input$save_as_name) || input$save_as_name == "") {
+        paste0(Sys.Date(), "_updated_pdf", ".pdf")
       } else {
         paste0(sanitize_filename(input$save_as_name), ".pdf")  # Append ".pdf" to the user-provided name
       }
@@ -1162,17 +1217,17 @@ server <- function(input, output, session) {
         compressed_size <- file.info(compressed_path)$size / 1024 # Convert bytes to KB
         space_saved <- original_size - compressed_size
         percentage_saved <- space_saved / original_size * 100
-        cat("Original size(s):", original_size, "KB\n")
-        cat("Compressed size:", compressed_size, "KB\n")
-        cat("Space saved:", space_saved, "KB\n")
-        cat("Percentage saved:", round(percentage_saved, 2), "%\n")
-        showNotification(paste0("Original size(s): ", round(original_size), " KB, ",
-                                "Compressed size: ", round(compressed_size), " KB (",
-                                round(percentage_saved, 2), "% reduction)"), type = "message", duration = 15)
+        cat("Original size(s):", format_kb(original_size), "KB\n")
+        cat("Compressed size:", format_kb(compressed_size), "KB\n")
+        cat("Space saved:", format_kb(space_saved), "KB\n")
+        cat("Percentage saved:", round(percentage_saved, 1), "%\n")
+        showNotification(paste0("Original size(s): ", format_kb(original_size), " KB, ",
+                                "Compressed size: ", format_kb(compressed_size), " KB (",
+                                round(percentage_saved, 1), "% reduction)"), type = "message", duration = 20)
         if(space_saved > 0) {
           file.copy(compressed_path, file)
         } else {
-          showNotification(paste0("Compression resulted in a larger file. Saving uncompressed version instead..."), type = "warning", duration = 10)
+          showNotification(paste0("Compression resulted in a larger file. Saving uncompressed version instead..."), type = "warning", duration = 15)
           file.copy(pdf_to_save, file)
         }
       } else if (input$compact) {
@@ -1187,17 +1242,17 @@ server <- function(input, output, session) {
         compacted_size <- file.info(compact_path)$size / 1024 # Convert bytes to KB
         space_saved <- original_size - compacted_size
         percentage_saved <- space_saved / original_size * 100
-        cat("Original size(s):", original_size, "KB\n")
-        cat("Compacted size:", compacted_size, "KB\n")
-        cat("Space saved:", space_saved, "KB\n")
-        cat("Percentage saved:", round(percentage_saved, 2), "%\n")
-        showNotification(paste0("Original size(s): ", round(original_size), " KB, ",
-                                "Compacted size: ", round(compacted_size), " KB (",
-                                round(percentage_saved, 2), "% reduction)"), type = "message", duration = 15)
+        cat("Original size(s):", format_kb(original_size), "KB\n")
+        cat("Compacted size:", format_kb(compacted_size), "KB\n")
+        cat("Space saved:", format_kb(space_saved), "KB\n")
+        cat("Percentage saved:", round(percentage_saved, 1), "%\n")
+        showNotification(paste0("Original size(s): ", format_kb(original_size), " KB, ",
+                                "Compacted size: ", format_kb(compacted_size), " KB (",
+                                round(percentage_saved, 1), "% reduction)"), type = "message", duration = 20)
         if(space_saved > 0) {
           file.copy(compact_path, file)
         } else {
-          showNotification(paste0("Compact had no effect (no raster images?). Saving uncompressed version instead..."), type = "warning", duration = 10)
+          showNotification(paste0("Compact had no effect (no raster images?). Saving uncompressed version instead..."), type = "warning", duration = 15)
           file.copy(pdf_to_save, file)
         }
       } else {
@@ -1231,7 +1286,7 @@ server <- function(input, output, session) {
         convert_to_powerpoint(combined_pdf(), converted_file)
         showNotification(paste("PDF converted to", format, "successfully!"), type = "message")
 
-      } else if (format == "Images (.png as a zip file)" && package_check("magick")) {
+      } else if (format == "Images (.png in a zip file)" && package_check("magick")) {
         converted_file <- convert_to_images(combined_pdf(), temp_dir, dpi = image_dpi)
         showNotification(paste("PDF converted to", format, "successfully!"), type = "message")
       }

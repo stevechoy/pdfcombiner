@@ -35,9 +35,9 @@ You can install `{pdfcombiner}` from CRAN:
 install.packages("pdfcombiner")
 
 ## Alternatively, install the latest development version from GitHub:
-## Install devtools first if required
-# install.packages("devtools")
-# devtools::install_github("stevechoy/pdfcombiner")
+## Install pak first if required
+# install.packages("pak")
+# pak::pak("stevechoy/pdfcombiner")
 ```
 
 For advanced users, you may run PDF Combiner locally *without* installing it as a package (i.e. launch the App directly from R console), as long as you have the following packages:  
