@@ -13,20 +13,20 @@
 image_to_pdf <- function(img_path, pdf_path, dpi = 72) {
   frames <- magick::image_read(img_path)          # may have >1 frame (gif/tiff)
   frame_pdfs <- character(length(frames))
-  
+
   for (k in seq_along(frames)) {
     fr <- magick::image_flatten(
       magick::image_background(frames[k], "white"), "Over")   # remove alpha
     info <- magick::image_info(fr)
-    ras  <- as.raster(fr)
-    
+    ras  <- grDevices::as.raster(fr)
+
     frame_pdfs[k] <- tempfile(fileext = ".pdf")
     grDevices::pdf(frame_pdfs[k], width = info$width / dpi, height = info$height / dpi)
     grid::grid.newpage()
     grid::grid.raster(ras, interpolate = FALSE, width = 1, height = 1)
     grDevices::dev.off()
   }
-  
+
   if (length(frame_pdfs) == 1) {
     file.copy(frame_pdfs, pdf_path, overwrite = TRUE)
   } else {

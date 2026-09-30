@@ -2,21 +2,24 @@
 % Please edit documentation in R/convert_to_images.R
 \name{convert_to_images}
 \alias{convert_to_images}
-\title{Convert to Images}
+\title{Convert a PDF to PNG images}
 \usage{
 convert_to_images(pdf_path, output_dir, dpi = 300)
 }
 \arguments{
-\item{pdf_path}{Path of input PDF}
+\item{pdf_path}{Path to the input PDF.}
 
-\item{output_dir}{Path to save new PowerPoint file to}
+\item{output_dir}{Directory in which a temporary working folder is created.}
 
-\item{dpi}{dots per inch for .png files, default 300}
+\item{dpi}{Rendering resolution in dots per inch. Default is 300.}
 }
 \value{
-a path to either a .zip file (if multiple images) or a single .png file
+Path to the output file: the PNG itself if the PDF has one page,
+otherwise a ZIP archive containing one PNG per page.
+Errors if no pages are converted.
 }
 \description{
-Convert to Images
+Renders each page of a PDF as a PNG. Must be called inside a Shiny
+\code{withProgress()} block because it updates the progress bar.
 }
 \keyword{internal}
