@@ -598,7 +598,7 @@ pdfcombiner <- function(max_file_size      = 500,
                 current_pdfs[[file_name]] <- file_path
               }
             } else {
-              img <- magick::image_read(file_path)  # Read the image
+              #img <- magick::image_read(file_path)  # Read the image
               new_path <- file.path(temp_dir, paste0("converted_image_", i, "_", format(Sys.time(), "%Y%m%d%H%M%S"), ".pdf"))
               #magick::image_write(img, path = new_path, format = "pdf")  # Write the image as a PDF
               image_to_pdf(file_path, new_path, dpi = 150) # Would 72 be too big?
